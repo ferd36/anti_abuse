@@ -250,6 +250,9 @@ def generate_malicious_events(
         victim_to_pattern[vid] = "profile_defacement"
 
     print("Generating ATO attack patterns...")
+    
+    # Collect output lines for aligned printing
+    output_lines = []
 
     for i, vid in enumerate(smash_victims):
         base = now - timedelta(days=rng.randint(3, 20), hours=rng.randint(0, 23))
@@ -259,7 +262,7 @@ def generate_malicious_events(
             close_account=close,
         )
         all_events.extend(evts)
-        print(f"  Smash & Grab victim {vid}: {len(evts)} events, close={close}")
+        output_lines.append((vid, "Smash & Grab", f"{len(evts)} events, close={close}"))
 
     for vid in slow_victims:
         base = now - timedelta(days=rng.randint(10, 25), hours=rng.randint(0, 23))
@@ -267,7 +270,7 @@ def generate_malicious_events(
             vid, user_countries.get(vid, "US"), all_user_ids, base, counter, rng,
         )
         all_events.extend(evts)
-        print(f"  Low & Slow victim {vid}: {len(evts)} events")
+        output_lines.append((vid, "Low & Slow", f"{len(evts)} events"))
 
     for i, vid in enumerate(hopper_victims):
         base = now - timedelta(days=rng.randint(15, 28), hours=rng.randint(0, 23))
@@ -277,7 +280,7 @@ def generate_malicious_events(
             close_account=close, config=config,
         )
         all_events.extend(evts)
-        print(f"  Country Hopper victim {vid}: {len(evts)} events, close={close}")
+        output_lines.append((vid, "Country Hopper", f"{len(evts)} events, close={close}"))
 
     for vid in thief_victims:
         base = now - timedelta(days=rng.randint(5, 20), hours=rng.randint(0, 23))
@@ -285,7 +288,7 @@ def generate_malicious_events(
             vid, user_countries.get(vid, "US"), all_user_ids, base, counter, rng,
         )
         all_events.extend(evts)
-        print(f"  Data Thief victim {vid}: {len(evts)} events")
+        output_lines.append((vid, "Data Thief", f"{len(evts)} events"))
 
     for batch_idx, batch in enumerate([stuffer_batch_1, stuffer_batch_2], 1):
         base = now - timedelta(days=rng.randint(3, 15), hours=rng.randint(0, 23))
@@ -295,7 +298,8 @@ def generate_malicious_events(
             config=config,
         )
         all_events.extend(evts)
-        print(f"  Credential Stuffer batch {batch_idx} ({len(batch)} victims): {len(evts)} events")
+        ids = ", ".join(batch)
+        output_lines.append((ids, f"Credential Stuffer batch {batch_idx}", f"{len(evts)} events"))
 
     for vid in login_storm_victims:
         base = now - timedelta(days=rng.randint(5, 20), hours=rng.randint(0, 23))
@@ -303,7 +307,7 @@ def generate_malicious_events(
             vid, user_countries.get(vid, "US"), all_user_ids, base, counter, rng,
         )
         all_events.extend(evts)
-        print(f"  Login Storm victim {vid}: {len(evts)} events")
+        output_lines.append((vid, "Login Storm", f"{len(evts)} events"))
 
     for vid in stealth_victims:
         base = now - timedelta(days=rng.randint(5, 25), hours=rng.randint(0, 23))
@@ -311,7 +315,7 @@ def generate_malicious_events(
             vid, user_countries.get(vid, "US"), all_user_ids, base, counter, rng,
         )
         all_events.extend(evts)
-        print(f"  Stealth Takeover victim {vid}: {len(evts)} events")
+        output_lines.append((vid, "Stealth Takeover", f"{len(evts)} events"))
 
     if scraper_victims:
         base = now - timedelta(days=rng.randint(3, 14), hours=rng.randint(0, 23))
@@ -324,7 +328,8 @@ def generate_malicious_events(
         strategy_used = "random"
         if evts:
             strategy_used = evts[-1].metadata.get("scrape_strategy", "unknown")
-        print(f"  Scraper Cluster ({len(scraper_victims)} accounts, strategy={strategy_used}): {len(evts)} events")
+        ids = ", ".join(scraper_victims)
+        output_lines.append((ids, f"Scraper Cluster (strategy={strategy_used})", f"{len(evts)} events"))
 
     for vid in spear_victims:
         base = now - timedelta(days=rng.randint(3, 18), hours=rng.randint(0, 23))
@@ -334,7 +339,7 @@ def generate_malicious_events(
         )
         all_events.extend(evts)
         num_phish_msgs = sum(1 for e in evts if e.interaction_type == InteractionType.MESSAGE_USER)
-        print(f"  Spear Phisher victim {vid}: {len(evts)} events ({num_phish_msgs} targeted messages)")
+        output_lines.append((vid, "Spear Phisher", f"{len(evts)} events ({num_phish_msgs} targeted messages)"))
 
     if cred_tester_victims:
         base = now - timedelta(days=rng.randint(2, 10), hours=rng.randint(0, 23))
@@ -344,7 +349,8 @@ def generate_malicious_events(
             config=config,
         )
         all_events.extend(evts)
-        print(f"  Credential Tester ({len(cred_tester_victims)} accounts): {len(evts)} events")
+        ids = ", ".join(cred_tester_victims)
+        output_lines.append((ids, "Credential Tester", f"{len(evts)} events"))
 
     for vid in conn_harvest_victims:
         base = now - timedelta(days=rng.randint(3, 15), hours=rng.randint(0, 23))
@@ -354,7 +360,7 @@ def generate_malicious_events(
         )
         all_events.extend(evts)
         num_connects = sum(1 for e in evts if e.interaction_type == InteractionType.CONNECT_WITH_USER)
-        print(f"  Connection Harvester victim {vid}: {len(evts)} events ({num_connects} connection requests)")
+        output_lines.append((vid, "Connection Harvester", f"{len(evts)} events ({num_connects} connection requests)"))
 
     for vid in sleeper_victims:
         base = now - timedelta(days=rng.randint(25, 40), hours=rng.randint(0, 23))
@@ -364,7 +370,7 @@ def generate_malicious_events(
         all_events.extend(evts)
         num_checkins = sum(1 for e in evts if e.metadata.get("checkin_sequence"))
         num_spam = sum(1 for e in evts if e.interaction_type == InteractionType.MESSAGE_USER)
-        print(f"  Sleeper Agent victim {vid}: {len(evts)} events ({num_checkins} check-ins, {num_spam} spam)")
+        output_lines.append((vid, "Sleeper Agent", f"{len(evts)} events ({num_checkins} check-ins, {num_spam} spam)"))
 
     for vid in defacement_victims:
         base = now - timedelta(days=rng.randint(3, 20), hours=rng.randint(0, 23))
@@ -377,7 +383,7 @@ def generate_malicious_events(
             1 for e in evts
             if e.interaction_type in (InteractionType.CHANGE_NAME, InteractionType.CHANGE_PROFILE)
         )
-        print(f"  Profile Defacement victim {vid}: {len(evts)} events ({num_deface} profile/name changes)")
+        output_lines.append((vid, "Profile Defacement", f"{len(evts)} events ({num_deface} profile/name changes)"))
 
     fake_ids = fake_account_user_ids or []
     for vid in fake_ids:
@@ -387,7 +393,22 @@ def generate_malicious_events(
         evts, counter = fake_account(vid, all_user_ids, base, counter, rng, config=config)
         all_events.extend(evts)
         victim_to_pattern[vid] = "fake_account"
-        print(f"  Fake Account victim {vid}: {len(evts)} events")
+        output_lines.append((vid, "Fake Account", f"{len(evts)} events"))
+
+    # Format and print aligned output
+    if output_lines:
+        # Truncate attack types if needed and find max widths
+        formatted_lines = []
+        for user_ids, attack_type, details in output_lines:
+            if len(attack_type) > 20:
+                attack_type = attack_type[:20] + "..."
+            formatted_lines.append((user_ids, attack_type, details))
+        
+        max_id_width = max(len(line[0]) for line in formatted_lines)
+        max_attack_width = max(len(line[1]) for line in formatted_lines)
+        
+        for user_ids, attack_type, details in formatted_lines:
+            print(f"  {user_ids:<{max_id_width}}  {attack_type:<{max_attack_width}}  {details}")
 
     all_events.sort(key=lambda e: e.timestamp)
 
@@ -403,13 +424,13 @@ def generate_malicious_events(
     msg_count = sum(1 for e in all_events if e.interaction_type == InteractionType.MESSAGE_USER)
     close_count = sum(1 for e in all_events if e.interaction_type == InteractionType.CLOSE_ACCOUNT)
 
-    print(f"\nATO Summary:")
+    patterns_used = sorted(set(victim_to_pattern.values()))
+    print(f"\nSummary:")
     print(f"  Victims:         {len(victims)}")
     print(f"  Total events:    {len(all_events)}")
     print(f"  Spam messages:   {msg_count}")
     print(f"  Accounts closed: {close_count}")
-    print(f"  Attack patterns: 14 (smash_grab, low_slow, country_hopper, data_thief, credential_stuffer, login_storm, stealth_takeover, fake_account, scraper_cluster, spear_phisher, credential_tester, connection_harvester, sleeper_agent, profile_defacement)")
-
+   
     return all_events, victim_to_pattern
 
 

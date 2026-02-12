@@ -115,7 +115,6 @@ def main() -> None:
 
     for victim_id, pattern in victim_to_pattern.items():
         repo.update_user_generation_pattern(victim_id, pattern)
-    print(f"\n  ATO events: {len(ato_events)}")
 
     deleted = repo.enforce_close_account_invariant()
     if deleted:
@@ -131,8 +130,11 @@ def main() -> None:
     print(f"  Active users:       {len(repo.get_active_user_ids())}")
     print(f"  Total interactions: {repo.count_interactions()}")
     print("\n  Interactions by type:")
-    for itype, count in sorted(repo.count_interactions_by_type().items()):
-        print(f"    {itype:30s} {count:>6,}")
+    counts = repo.count_interactions_by_type()
+    max_count = max(counts.values()) if counts else 0
+    width = max(6, len(f"{max_count:,}"))
+    for itype, count in sorted(counts.items()):
+        print(f"    {itype:30s} {count:>{width},}")
 
     repo.close()
     print(f"\nDone. Database: {db_path}")
