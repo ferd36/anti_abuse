@@ -1,0 +1,18 @@
+[run]
+source = .
+omit =
+    */tests/*
+    */test_*.py
+    detect.py
+    serve.py
+    api/server.py
+    ml/train.py
+    ml/pipeline.py
+    ml/predict.py
+
+[report]
+fail_under = 96
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError

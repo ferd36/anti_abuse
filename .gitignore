@@ -1,0 +1,100 @@
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+*.manifest
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / linting
+.mypy_cache/
+.ruff_cache/
+
+# =============================================================================
+# Build artifacts (Swift, Java, Scala, C++)
+# =============================================================================
+# Swift
+.build/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+
+# Java / Scala
+*.class
+*.jar
+*.war
+*.ear
+target/
+out/
+
+# C++
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+*.out
+*.bin
+
+# =============================================================================
+# Generated data
+# =============================================================================
+main/data
+*.db
+*.sqlite
+*.sqlite3
+
+# ML artifacts
+*.pt
+*.pth
+*.onnx
+*.npy
+*.npz
+ml/output/
+
+# =============================================================================
+# IDE / editor
+# =============================================================================
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db

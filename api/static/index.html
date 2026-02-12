@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anti-Abuse - User Explorer</title>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --text-secondary: #6b7280;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #d97706;
+    --orange-light: #fef3c7;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+
+  @media (min-width: 768px) {
+    header { padding: 16px 24px; gap: 16px; }
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 120px;
+    max-width: 480px;
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-box input:focus { border-color: var(--primary); }
+
+  .search-box::before {
+    content: "\1F50D";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-left: auto;
+  }
+
+  .btn-run-detection, .btn-run-train {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-run-detection {
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+  .btn-run-detection:hover { opacity: 0.9; }
+  .btn-run-train {
+    border: 1px solid var(--text-secondary);
+    background: transparent;
+    color: var(--text);
+  }
+  .btn-run-train:hover { background: #f3f4f6; }
+  .btn-run-detection:disabled, .btn-run-train:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .model-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .model-status.untrained {
+    background: var(--orange-light);
+    color: var(--orange);
+  }
+  .model-status.trained {
+    background: var(--green-light);
+    color: var(--green);
+  }
+  .model-status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .model-status.untrained .dot { background: var(--orange); }
+  .model-status.trained .dot { background: var(--green); }
+
+  .metrics-bar {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .metric-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+  .metric-chip .metric-label { color: var(--text-secondary); font-weight: 500; }
+  .metric-chip.good { background: var(--green-light); color: var(--green); }
+  .metric-chip.medium { background: var(--orange-light); color: var(--orange); }
+  .metric-chip.poor { background: var(--red-light); color: var(--red); }
+
+  /* ---- Layout ---- */
+  .container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .container { padding: 20px 24px; }
+  }
+
+  /* ---- User list ---- */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .user-table {
+    width: 100%;
+    min-width: 800px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border-collapse: collapse;
+    overflow: hidden;
+    table-layout: auto;
+  }
+
+  .user-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .user-table td {
+    padding: 10px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .user-table tr:last-child td { border-bottom: none; }
+
+  .user-table tbody tr {
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .user-table tbody tr:hover { background: var(--primary-light); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-active { background: var(--green-light); color: var(--green); }
+  .badge-inactive { background: var(--red-light); color: var(--red); }
+  .badge-residential { background: var(--green-light); color: var(--green); }
+  .badge-hosting { background: var(--orange-light); color: var(--orange); }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .pagination button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .pagination button:hover { background: var(--primary-light); }
+  .pagination button:disabled { opacity: 0.4; cursor: default; }
+  .pagination span { font-size: 13px; color: var(--text-secondary); }
+
+  /* ---- Profile view ---- */
+  .profile-container {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .profile-container { grid-template-columns: 1fr; }
+    .detail-list .value { max-width: 100%; }
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .card h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile-header {
+    text-align: center;
+    padding-bottom: 16px;
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .profile-header h2 {
+    border: none;
+    margin-bottom: 2px;
+    font-size: 20px;
+  }
+
+  .profile-header .headline {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .profile-header .summary {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .detail-list {
+    list-style: none;
+  }
+
+  .detail-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .detail-list li:last-child { border-bottom: none; }
+
+  .detail-list .label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .detail-list .value {
+    font-weight: 600;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-all;
+  }
+
+  /* ---- Stats grid ---- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  @media (min-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  }
+
+  .stat-card {
+    background: #f9fafb;
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-card .number {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .stat-card .label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+
+  /* ---- Connections grid ---- */
+  .connections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 600px) {
+    .connections-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  }
+
+  .connection-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .connection-card:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+
+  .connection-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--purple);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .connection-info { overflow: hidden; }
+  .connection-info .name { font-size: 13px; font-weight: 600; }
+  .connection-info .sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- Interactions table ---- */
+  .interactions-table {
+    width: 100%;
+    min-width: 500px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .interactions-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .interactions-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .interactions-table tbody tr:hover { background: #f9fafb; }
+
+  .type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .type-login { background: #dbeafe; color: #1d4ed8; }
+  .type-message_user { background: #d1fae5; color: #047857; }
+  .type-view_user_page { background: #ede9fe; color: #6d28d9; }
+  .type-connect_with_user { background: #fce7f3; color: #be185d; }
+  .type-upload_address_book { background: #fef3c7; color: #b45309; }
+  .type-download_address_book { background: #fed7aa; color: #c2410c; }
+  .type-close_account { background: #fee2e2; color: #dc2626; }
+  .type-account_creation { background: #e0f2fe; color: #0369a1; }
+  .type-change_password { background: #fef9c3; color: #a16207; }
+  .type-change_profile { background: #fef9c3; color: #854d0e; }
+  .type-change_name { background: #fef9c3; color: #713f12; }
+
+  .badge-success { background: var(--green-light); color: var(--green); }
+  .badge-fail { background: var(--red-light); color: var(--red); }
+
+  .badge-ato-flagged { background: var(--red-light); color: var(--red); }
+  .badge-ato-medium { background: var(--orange-light); color: var(--orange); }
+  .badge-ato-low { background: var(--green-light); color: var(--green); }
+  .badge-fraud { background: var(--purple-light); color: var(--purple); }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+  .filter-toggle input { cursor: pointer; }
+
+  .sortable-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .sortable-th:hover { color: var(--primary); }
+  .sortable-th .sort-icon {
+    margin-left: 4px;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+  .sortable-th .sort-icon::after { content: '\2195'; }  /* ↕ */
+  .sortable-th.sorted-asc .sort-icon::after { content: '\2191'; }  /* ↑ */
+  .sortable-th.sorted-desc .sort-icon::after { content: '\2193'; }  /* ↓ */
+
+  .ua-cell {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .ua-cell.ua-nonbrowser {
+    color: var(--orange);
+    font-weight: 600;
+  }
+
+  .clickable-user {
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .clickable-user:hover { text-decoration: underline; }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+  }
+
+  .train-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .train-modal-overlay.visible { display: flex; }
+  .train-modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    max-width: 600px;
+    width: 100%;
+  }
+  .train-modal h3 { margin-bottom: 16px; font-size: 16px; }
+  .train-chart-container {
+    width: 100%;
+    height: 220px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+  }
+  .train-chart-container canvas { width: 100%; height: 100%; display: block; }
+  .train-status { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+  .train-modal .btn-close {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .train-modal .btn-close:hover { background: var(--bg); }
+
+  .message-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .message-modal-overlay.visible { display: flex; }
+  .message-modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+  }
+  .message-modal h3 { margin-bottom: 12px; font-size: 16px; }
+  .message-modal .message-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .message-modal .btn-close { margin-top: 16px; }
+  .interactions-table tr.msg-row { cursor: pointer; }
+  .interactions-table tr.msg-row:hover { background: #e0f2fe !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Anti-Abuse</h1>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search users by name, ID, email, country...">
+  </div>
+  <label class="filter-toggle" id="flaggedFilter">
+    <input type="checkbox" id="flaggedOnlyCheckbox">
+    <span>Flagged only</span>
+  </label>
+  <label class="filter-toggle" id="labelsFilter">
+    <input type="checkbox" id="showLabelsCheckbox" checked>
+    <span>Show labels</span>
+  </label>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div class="stats-bar" id="statsBar">
+    <span class="model-status untrained" id="modelStatus"><span class="dot"></span><span id="modelStatusText">No model</span></span>
+    <button type="button" class="btn-run-train" id="runTrainBtn">Train</button>
+    <button type="button" class="btn-run-detection" id="runDetectionBtn">Run detection</button>
+    <span id="statsText"></span>
+    <span class="metrics-bar" id="metricsBar" style="display:none"></span>
+  </div>
+</header>
+
+<div class="container" id="app">
+  <div class="loading">Loading...</div>
+</div>
+
+<div class="message-modal-overlay" id="messageModal">
+  <div class="message-modal">
+    <h3>Message</h3>
+    <div class="message-body" id="messageModalBody"></div>
+    <button type="button" class="btn-close" id="messageModalClose">Close</button>
+  </div>
+</div>
+
+<div class="train-modal-overlay" id="trainModal">
+  <div class="train-modal">
+    <h3>Training — Loss</h3>
+    <div class="train-status" id="trainStatus">Starting...</div>
+    <div class="train-chart-container">
+      <canvas id="trainChart" width="512" height="220"></canvas>
+    </div>
+    <button type="button" class="btn-close" id="trainModalClose" style="display:none">Close</button>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let currentView = 'list'; // 'list' | 'profile'
+let currentUserId = null;
+let currentPage = 1;
+let currentQuery = '';
+let currentSortBy = 'user_id';
+let currentSortOrder = 'asc';
+const PER_PAGE = 50;
+
+function getVisibleColumns() {
+  const showLabels = document.getElementById('showLabelsCheckbox')?.checked ?? true;
+  const all = [
+    { key: 'user_id', label: 'ID' },
+    { key: 'display_name', label: 'Name' },
+    { key: 'headline', label: 'Headline' },
+    { key: 'country', label: 'Country' },
+    { key: 'ip_type', label: 'IP Type' },
+    { key: 'is_active', label: 'Status' },
+    { key: 'ato_prob', label: 'Risk' },
+    { key: 'generation_pattern', label: 'Label' },
+    { key: 'connections_count', label: 'Connections' },
+    { key: 'join_date', label: 'Joined' },
+  ];
+  return showLabels ? all : all.filter(c => c.key !== 'generation_pattern');
+}
+
+// ---------------------------------------------------------------------------
+// Model status
+// ---------------------------------------------------------------------------
+async function refreshModelStatus() {
+  try {
+    const data = await api('/api/model-status');
+    const el = document.getElementById('modelStatus');
+    const txt = document.getElementById('modelStatusText');
+    if (data.trained) {
+      el.classList.remove('untrained');
+      el.classList.add('trained');
+      const d = new Date(data.mtime * 1000);
+      txt.textContent = 'Model trained ' + d.toLocaleString();
+    } else {
+      el.classList.remove('trained');
+      el.classList.add('untrained');
+      txt.textContent = 'No model';
+    }
+  } catch (_) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Detection metrics (precision / recall)
+// ---------------------------------------------------------------------------
+function metricClass(v) {
+  if (v >= 0.8) return 'good';
+  if (v >= 0.5) return 'medium';
+  return 'poor';
+}
+
+async function refreshDetectionMetrics() {
+  const bar = document.getElementById('metricsBar');
+  try {
+    const m = await api('/api/detection-metrics');
+    if (!m.available) { bar.style.display = 'none'; return; }
+    bar.style.display = 'inline-flex';
+    bar.innerHTML =
+      `<span class="metric-chip ${metricClass(m.precision)}"><span class="metric-label">Precision</span> ${(m.precision * 100).toFixed(1)}%</span>` +
+      `<span class="metric-chip ${metricClass(m.recall)}"><span class="metric-label">Recall</span> ${(m.recall * 100).toFixed(1)}%</span>` +
+      `<span class="metric-chip ${metricClass(m.f1)}"><span class="metric-label">F1</span> ${(m.f1 * 100).toFixed(1)}%</span>`;
+  } catch (_) { bar.style.display = 'none'; }
+}
+
+// ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
+async function api(path) {
+  const resp = await fetch(path);
+  if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+  return resp.json();
+}
+
+async function apiPost(path) {
+  const resp = await fetch(path, { method: 'POST' });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.error || `API error: ${resp.status}`);
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Render: User list
+// ---------------------------------------------------------------------------
+async function loadUserList(page = 1, query = '', sortBy = null, sortOrder = null) {
+  currentView = 'list';
+  currentUserId = null;
+  currentPage = page;
+  currentQuery = query;
+  if (sortBy != null) currentSortBy = sortBy;
+  if (sortOrder != null) currentSortOrder = sortOrder;
+
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading">Loading users...</div>';
+  updateBreadcrumb();
+
+  const params = new URLSearchParams({ page, per_page: PER_PAGE });
+  if (query) params.set('q', query);
+  if (document.getElementById('flaggedOnlyCheckbox').checked) {
+    params.set('flagged_only', '1');
+  }
+  params.set('sort_by', currentSortBy);
+  params.set('sort_order', currentSortOrder);
+
+  const data = await api(`/api/users?${params}`);
+  const totalPages = Math.ceil(data.total / data.per_page);
+
+  let statsText = `${data.total} users`;
+  if (data.flagged_count != null) {
+    statsText += ` · ${data.flagged_count} flagged`;
+  } else {
+    statsText += ' · Run detection to enable risk flags';
+  }
+  const statsEl = document.getElementById('statsText');
+  if (statsEl) statsEl.innerHTML = statsText;
+
+  if (data.users.length === 0) {
+    app.innerHTML = '<div class="empty-state">No users found.</div>';
+    return;
+  }
+
+  const sortHeader = (key, label) => {
+    const isSorted = currentSortBy === key;
+    const cls = isSorted ? `sortable-th sorted-${currentSortOrder}` : 'sortable-th';
+    const nextOrder = isSorted && currentSortOrder === 'asc' ? 'desc' : 'asc';
+    return `<th class="${cls}" onclick="loadUserList(1, '${escAttr(currentQuery)}', '${key}', '${nextOrder}')">${label}<span class="sort-icon"></span></th>`;
+  };
+
+  const visibleCols = getVisibleColumns();
+  let html = `<div class="table-wrapper"><table class="user-table">
+    <thead><tr>
+      ${visibleCols.map(c => sortHeader(c.key, c.label)).join('')}
+    </tr></thead><tbody>`;
+
+  for (const u of data.users) {
+    const statusBadge = u.is_active
+      ? '<span class="badge badge-active">Active</span>'
+      : '<span class="badge badge-inactive">Inactive</span>';
+    const ipBadge = u.ip_type === 'hosting'
+      ? '<span class="badge badge-hosting">Hosting</span>'
+      : '<span class="badge badge-residential">Residential</span>';
+    const joined = new Date(u.join_date).toLocaleDateString();
+
+    let riskBadge = '—';
+    if (u.ato_prob != null) {
+      if (u.ato_flagged) {
+        riskBadge = `<span class="badge badge-ato-flagged">High ${(u.ato_prob * 100).toFixed(0)}%</span>`;
+      } else if (u.ato_prob >= 0.3) {
+        riskBadge = `<span class="badge badge-ato-medium">${(u.ato_prob * 100).toFixed(0)}%</span>`;
+      } else {
+        riskBadge = `<span class="badge badge-ato-low">Low</span>`;
+      }
+    }
+
+    const labelDisplay = u.generation_pattern && u.generation_pattern !== 'clean'
+      ? `<span class="badge badge-fraud">${esc(u.generation_pattern)}</span>`
+      : 'OK';
+
+    const cells = {
+      user_id: `<code>${esc(u.user_id)}</code>`,
+      display_name: `<strong>${esc(u.display_name || '')}</strong>`,
+      headline: `<span style="color:var(--text-secondary)">${esc(u.headline)}</span>`,
+      country: u.country,
+      ip_type: ipBadge,
+      is_active: statusBadge,
+      ato_prob: riskBadge,
+      generation_pattern: labelDisplay,
+      connections_count: String(u.connections_count),
+      join_date: joined,
+    };
+    const rowCells = visibleCols.map(c => `<td>${cells[c.key]}</td>`).join('');
+    html += `<tr onclick="loadProfile('${escAttr(u.user_id)}')">${rowCells}</tr>`;
+  }
+
+  html += '</tbody></table></div>';
+
+  // Pagination
+  html += '<div class="pagination">';
+  html += `<button onclick="loadUserList(${page - 1}, '${escAttr(query)}', '${currentSortBy}', '${currentSortOrder}')" ${page <= 1 ? 'disabled' : ''}>Previous</button>`;
+  html += `<span>Page ${page} of ${totalPages}</span>`;
+  html += `<button onclick="loadUserList(${page + 1}, '${escAttr(query)}', '${currentSortBy}', '${currentSortOrder}')" ${page >= totalPages ? 'disabled' : ''}>Next</button>`;
+  html += '</div>';
+
+  app.innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Render: Profile
+// ---------------------------------------------------------------------------
+async function loadProfile(userId) {
+  currentView = 'profile';
+  currentUserId = userId;
+
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading">Loading profile...</div>';
+  updateBreadcrumb();
+
+  const data = await api(`/api/users/${userId}`);
+  const u = data.user;
+  const p = data.profile || {};
+  const initials = (p.display_name || userId).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  let atoBadge = '';
+  if (data.ato_prob != null) {
+    if (data.ato_flagged) {
+      atoBadge = `<span class="badge badge-ato-flagged" style="margin-top:8px">⚠ Risk: ${(data.ato_prob * 100).toFixed(0)}% (flagged)</span>`;
+    } else if (data.ato_prob >= 0.3) {
+      atoBadge = `<span class="badge badge-ato-medium" style="margin-top:8px">Risk: ${(data.ato_prob * 100).toFixed(0)}%</span>`;
+    } else {
+      atoBadge = `<span class="badge badge-ato-low" style="margin-top:8px">Risk: Low</span>`;
+    }
+  }
+
+  let html = '<div class="profile-container">';
+
+  // ---- Left column: profile card + details ----
+  html += '<div>';
+
+  // Profile card
+  html += `<div class="card profile-header">
+    <div class="avatar">${initials}</div>
+    <h2>${esc(p.display_name || userId)}</h2>
+    <div class="headline">${esc(p.headline || '')}</div>
+    ${atoBadge}
+    ${p.summary ? `<div class="summary">${esc(p.summary)}</div>` : ''}
+  </div>`;
+
+  // User details
+  const joined = new Date(u.join_date).toLocaleDateString();
+  const profileCreated = p.profile_created_at ? new Date(p.profile_created_at).toLocaleDateString() : '-';
+  const lastUpdated = p.last_updated_at ? new Date(p.last_updated_at).toLocaleDateString() : 'Never';
+  const statusBadge = u.is_active
+    ? '<span class="badge badge-active">Active</span>'
+    : '<span class="badge badge-inactive">Inactive</span>';
+  const ipBadge = u.ip_type === 'hosting'
+    ? '<span class="badge badge-hosting">Hosting</span>'
+    : '<span class="badge badge-residential">Residential</span>';
+
+  html += `<div class="card" style="margin-top:12px">
+    <h2>Account Details</h2>
+    <ul class="detail-list">
+      <li><span class="label">User ID</span><span class="value"><code>${u.user_id}</code></span></li>
+      <li><span class="label">Email</span><span class="value">${esc(u.email)}</span></li>
+      <li><span class="label">Status</span><span class="value">${statusBadge}</span></li>
+      <li><span class="label">Country</span><span class="value">${u.country}</span></li>
+      <li><span class="label">Language</span><span class="value">${u.language}</span></li>
+      <li><span class="label">IP Address</span><span class="value"><code>${u.ip_address}</code></span></li>
+      <li><span class="label">IP Type</span><span class="value">${ipBadge}</span></li>
+      <li><span class="label">Joined</span><span class="value">${joined}</span></li>
+      <li><span class="label">Profile Created</span><span class="value">${profileCreated}</span></li>
+      <li><span class="label">Last Updated</span><span class="value">${lastUpdated}</span></li>
+    </ul>
+  </div>`;
+
+  html += '</div>'; // end left column
+
+  // ---- Right column: stats, connections, interactions ----
+  html += '<div>';
+
+  // Interaction stats
+  const counts = data.interaction_counts || {};
+  const totalInteractions = Object.values(counts).reduce((a, b) => a + b, 0);
+  html += '<div class="card">';
+  html += '<h2>Activity Summary</h2>';
+  html += '<div class="stats-grid">';
+  html += `<div class="stat-card"><div class="number">${totalInteractions}</div><div class="label">Total Actions</div></div>`;
+  html += `<div class="stat-card"><div class="number">${data.connections_count}</div><div class="label">Connections</div></div>`;
+  for (const [type, count] of Object.entries(counts)) {
+    const label = type.replace(/_/g, ' ');
+    html += `<div class="stat-card"><div class="number">${count}</div><div class="label">${label}</div></div>`;
+  }
+  html += '</div></div>';
+
+  // Connections
+  html += '<div class="card" style="margin-top:12px">';
+  html += `<h2>Connections (${data.connections_count})</h2>`;
+  if (data.connections_count > 0) {
+    html += '<div class="connections-grid" id="connectionsGrid">';
+    for (const c of data.connections || []) {
+      const initials = (c.display_name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+      html += `<div class="connection-card" onclick="loadProfile('${escAttr(c.user_id)}')">
+        <div class="connection-avatar">${initials}</div>
+        <div class="connection-info">
+          <div class="name">${esc(c.display_name)}</div>
+          <div class="sub">${esc(c.headline || '')} &middot; ${c.country || ''}</div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  } else {
+    html += '<div class="empty-state">No connections yet.</div>';
+  }
+  html += '</div>';
+
+  // Recent interactions
+  html += '<div class="card" style="margin-top:12px">';
+  html += '<h2>Recent Interactions</h2>';
+  if (data.recent_interactions && data.recent_interactions.length > 0) {
+    window._lastProfileInteractions = data.recent_interactions;
+    html += `<div class="table-wrapper"><table class="interactions-table">
+      <thead><tr><th>Time</th><th>Type</th><th>Target</th><th>IP</th><th>Country</th><th>User Agent</th><th>Details</th></tr></thead><tbody>`;
+    data.recent_interactions.forEach((i, idx) => {
+      const time = new Date(i.timestamp).toLocaleString();
+      const typeCls = 'type-' + i.interaction_type;
+      const typeLabel = i.interaction_type.replace(/_/g, ' ');
+      const target = i.target_user_id
+        ? `<span class="clickable-user" onclick="event.stopPropagation(); loadProfile('${escAttr(i.target_user_id)}')">${esc(i.target_user_id)}</span>`
+        : '-';
+      const ipBadgeSmall = i.ip_type === 'hosting'
+        ? `<code>${i.ip_address}</code> <span class="badge badge-hosting">H</span>`
+        : `<code>${i.ip_address}</code>`;
+      const ipCountry = i.ip_country || '—';
+      let loginBadge = '';
+      if (i.interaction_type === 'login') {
+        if (i.metadata.login_success === true) {
+          loginBadge = ' <span class="badge badge-success">OK</span>';
+        } else if (i.metadata.login_success === false) {
+          loginBadge = ' <span class="badge badge-fail">FAIL</span>';
+        }
+      }
+      const spamBadge = i.interaction_type === 'message_user' && i.metadata.is_spam
+        ? ' <span class="badge badge-fail">SPAM</span>' : '';
+
+      const ua = i.user_agent || '—';
+      const isNonBrowser = ua !== '—' && !ua.toLowerCase().startsWith('mozilla/');
+      const uaCls = isNonBrowser ? 'ua-cell ua-nonbrowser' : 'ua-cell';
+
+      const meta = Object.keys(i.metadata).length > 0
+        ? '<code>' + esc(JSON.stringify(i.metadata).slice(0, 60)) + '</code>'
+        : '-';
+
+      const isMsg = i.interaction_type === 'message_user';
+      const rowClass = isMsg ? ' class="msg-row"' : '';
+      const rowClick = isMsg ? ` onclick="showMessageModal(${idx})"` : '';
+      html += `<tr${rowClass}${rowClick}>
+        <td style="white-space:nowrap">${time}</td>
+        <td><span class="type-badge ${typeCls}">${typeLabel}</span>${loginBadge}${spamBadge}</td>
+        <td>${target}</td>
+        <td style="white-space:nowrap">${ipBadgeSmall}</td>
+        <td>${ipCountry}</td>
+        <td class="${uaCls}" title="${escAttr(ua)}">${esc(ua)}</td>
+        <td>${meta}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+  } else {
+    html += '<div class="empty-state">No interactions recorded.</div>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // end right column
+  html += '</div>'; // end profile-container
+
+  app.innerHTML = html;
+
+}
+
+// ---------------------------------------------------------------------------
+// Breadcrumb + navigation
+// ---------------------------------------------------------------------------
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (currentView === 'list') {
+    bc.innerHTML = 'All Users';
+  } else {
+    bc.innerHTML = `<a onclick="loadUserList(currentPage, currentQuery)">All Users</a> &rsaquo; ${esc(currentUserId || '')}`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Search + filter
+// ---------------------------------------------------------------------------
+let searchTimeout = null;
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    loadUserList(1, e.target.value.trim());
+  }, 300);
+});
+
+document.getElementById('flaggedOnlyCheckbox').addEventListener('change', () => {
+  loadUserList(1, currentQuery);
+});
+
+document.getElementById('showLabelsCheckbox').addEventListener('change', () => {
+  loadUserList(currentPage, currentQuery);
+});
+
+document.getElementById('runTrainBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('runTrainBtn');
+  const modal = document.getElementById('trainModal');
+  const statusEl = document.getElementById('trainStatus');
+  const canvas = document.getElementById('trainChart');
+  const closeBtn = document.getElementById('trainModalClose');
+
+  btn.disabled = true;
+  btn.textContent = 'Training...';
+  modal.classList.add('visible');
+  closeBtn.style.display = 'none';
+  statusEl.textContent = 'Starting...';
+
+  const points = [];
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  function drawChart() {
+    ctx.fillStyle = '#f3f4f6';
+    ctx.fillRect(0, 0, width, height);
+    if (points.length === 0) return;
+    const maxLoss = Math.max(...points.map(p => p.loss), 0.01);
+    const minLoss = Math.min(...points.map(p => p.loss), 0);
+    const range = maxLoss - minLoss || 0.01;
+    const pad = 40;
+    const chartW = width - pad * 2;
+    const chartH = height - pad * 2;
+    const scaleY = (v) => pad + chartH - ((v - minLoss) / range) * chartH;
+    const scaleX = (i) => pad + (points.length > 1 ? (i / (points.length - 1)) : 0) * chartW;
+
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(scaleX(0), scaleY(points[0].loss));
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(scaleX(i), scaleY(points[i].loss));
+    }
+    ctx.stroke();
+    if (points.length > 0) {
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.arc(scaleX(points.length - 1), scaleY(points[points.length - 1].loss), 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Epoch', width / 2 - 20, height - 8);
+    ctx.save();
+    ctx.translate(12, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Loss', 0, 0);
+    ctx.restore();
+  }
+
+  try {
+    const resp = await fetch('/api/run-train', { method: 'POST' });
+    if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n\n');
+      buf = lines.pop() || '';
+      for (const block of lines) {
+        const m = block.match(/^data:\s*(.+)$/m);
+        if (!m) continue;
+        try {
+          const data = JSON.parse(m[1]);
+          if (data.epoch != null && data.loss != null) {
+            points.push({ epoch: data.epoch, loss: data.loss });
+            statusEl.textContent = `Epoch ${data.epoch} — loss: ${data.loss.toFixed(4)}`;
+            drawChart();
+          } else if (data.done) {
+            statusEl.textContent = 'Training complete.';
+            closeBtn.style.display = 'inline-block';
+          } else if (data.error) {
+            throw new Error(data.error);
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue;
+          throw e;
+        }
+      }
+    }
+    if (closeBtn.style.display === 'none') {
+      statusEl.textContent = points.length > 0 ? 'Training complete.' : 'Stream ended unexpectedly.';
+      closeBtn.style.display = 'inline-block';
+    }
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + (err.message || 'Unknown error');
+    closeBtn.style.display = 'inline-block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Train';
+    refreshModelStatus();
+  }
+});
+
+document.getElementById('trainModalClose').addEventListener('click', () => {
+  document.getElementById('trainModal').classList.remove('visible');
+});
+
+function showMessageModal(idx) {
+  const interactions = window._lastProfileInteractions;
+  if (!interactions || idx < 0 || idx >= interactions.length) return;
+  const i = interactions[idx];
+  if (i.interaction_type !== 'message_user') return;
+  const text = i.metadata?.message_text;
+  const body = document.getElementById('messageModalBody');
+  body.textContent = text || (i.metadata?.message_length != null
+    ? `(Message length: ${i.metadata.message_length} chars. Content not stored.)`
+    : '(No message content)');
+  document.getElementById('messageModal').classList.add('visible');
+}
+
+document.getElementById('messageModalClose').addEventListener('click', () => {
+  document.getElementById('messageModal').classList.remove('visible');
+});
+document.getElementById('messageModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    document.getElementById('messageModal').classList.remove('visible');
+  }
+});
+
+document.getElementById('runDetectionBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('runDetectionBtn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  try {
+    await apiPost('/api/run-detection');
+    if (currentView === 'list') {
+      await loadUserList(currentPage, currentQuery);
+    } else if (currentUserId) {
+      await loadProfile(currentUserId);
+      const d = await api('/api/users?page=1&per_page=1');
+      const statsEl = document.getElementById('statsText');
+      if (statsEl) statsEl.innerHTML = `${d.total} users` + (d.flagged_count != null ? ` · ${d.flagged_count} flagged` : ' · Run detection to enable risk flags');
+    }
+    refreshDetectionMetrics();
+  } catch (err) {
+    alert('Detection failed: ' + (err.message || 'Unknown error'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run detection';
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function escAttr(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+refreshModelStatus();
+refreshDetectionMetrics();
+loadUserList();
+</script>
+</body>
+</html>

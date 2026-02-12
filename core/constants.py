@@ -1,0 +1,37 @@
+"""
+System-wide constants for the anti-abuse ATO system.
+
+Domain validation, mock data config, and shared literals.
+"""
+
+from __future__ import annotations
+
+# ---------------------------------------------------------------------------
+# Domain validation (used by models, validate)
+# ---------------------------------------------------------------------------
+
+VALID_COUNTRIES = frozenset({
+    "US", "GB", "CA", "AU", "DE", "FR", "IN", "BR", "JP", "KR",
+    "NG", "RU", "CN", "MX", "ZA", "IT", "ES", "NL", "SE", "PL",
+    "UA", "RO", "VN", "PH", "ID", "TR", "EG", "PK", "BD", "TH",
+})
+
+VALID_LANGUAGES = frozenset({
+    "en", "es", "fr", "de", "pt", "ja", "ko", "zh", "hi", "ar",
+    "ru", "it", "nl", "sv", "pl", "uk", "ro", "vi", "tl", "id",
+    "tr", "th", "bn", "ca", "af",
+})
+
+VALID_ACCOUNT_TIERS = frozenset({"free", "premium", "enterprise"})
+
+VALID_USER_TYPES = frozenset({"regular", "recruiter"})
+
+GENERATION_PATTERN_CLEAN = "clean"
+
+# ---------------------------------------------------------------------------
+# Mock data config
+# ---------------------------------------------------------------------------
+
+NUM_USERS = 100_000
+NUM_FAKE_ACCOUNTS = 5
+INTERACTION_WINDOW_DAYS = 60
