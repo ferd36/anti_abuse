@@ -10,6 +10,7 @@ def _default_config() -> dict:
     return {
         "users": {
             "inactive_pct": 0.05,
+            "move_pct": 0.04,  # Legit users who moved country; registration_ip from old, ip from new
             "hosting_ip_pct": 0.10,
             "recruiter_pct": 0.06,
             "unrelated_email_pct": 0.05,
@@ -82,6 +83,35 @@ def _default_config() -> dict:
         "common": {
             "login_failure_before_success_pct": 0.03,
         },
+        "fishy_accounts": {
+            "num_fake": 5,
+            "num_pharmacy": 25,
+            "num_covert_porn": 20,
+            "num_account_farming": 15,
+            "num_harassment": 12,
+            "num_like_inflation": 10,
+            "pharmacy": {
+                "hosting_ip_pct": 0.15,
+                "email_verified_pct": 0.3,
+            },
+            "covert_porn": {
+                "hosting_ip_pct": 0.2,
+                "email_verified_pct": 0.4,
+            },
+            "profiles": {
+                "pharmacy_has_photo_pct": 0.4,
+                "pharmacy_location_pct": 0.6,
+                "pharmacy_endorsements_max": 3,
+                "covert_porn_has_photo_pct": 0.5,
+                "covert_porn_location_pct": 0.5,
+                "covert_porn_endorsements_max": 2,
+                "farming_has_photo_pct": 0.3,
+                "farming_location_pct": 0.5,
+                "farming_endorsements_max": 2,
+                "harassment_has_photo_pct": 0.3,
+                "like_inflation_has_photo_pct": 0.3,
+            },
+        },
         "fraud": {
             "pattern_weights": {
                 "smash_grab": 0.073,
@@ -97,8 +127,30 @@ def _default_config() -> dict:
                 "connection_harvester": 0.049,
                 "sleeper_agent": 0.049,
                 "profile_defacement": 0.049,
+                "executive_hunter": 0.068,
             },
             "fake_account": {"change_profile_pct": 0.70, "change_name_pct": 0.60},
+            "account_farming": {
+                "update_headline_pct": 0.7,
+                "update_summary_pct": 0.5,
+                "hours_between_accounts_min": 2,
+                "hours_between_accounts_max": 12,
+            },
+            "coordinated_harassment": {
+                "num_targets": 5,
+                "cluster_ips_max": 4,
+            },
+            "coordinated_like_inflation": {
+                "like_window_min_minutes": 2,
+                "like_window_max_minutes": 15,
+                "cluster_ips_max": 4,
+            },
+            "executive_hunter": {
+                "cluster_ips_max": 4,
+                "num_targets_min": 15,
+                "num_targets_max": 40,
+                "fallback_targets_max": 30,
+            },
             "connection_harvester": {"download_address_book_pct": 0.50},
             "country_hopper": {"view_during_hop_pct": 0.60},
             "credential_stuffer": {"close_account_pct": 0.50},
@@ -126,6 +178,7 @@ class DatasetConfig:
     email: dict = field(default_factory=dict)
     usage_patterns: dict = field(default_factory=dict)
     common: dict = field(default_factory=dict)
+    fishy_accounts: dict = field(default_factory=dict)
     fraud: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -150,6 +203,7 @@ class DatasetConfig:
             "email": self.email,
             "usage_patterns": self.usage_patterns,
             "common": self.common,
+            "fishy_accounts": self.fishy_accounts,
             "fraud": self.fraud,
         }
 
@@ -191,6 +245,11 @@ class DatasetConfig:
             for k, w in weights.items():
                 if not isinstance(w, (int, float)) or w < 0:
                     errs.append(f"{pattern}.{k}={w}: must be >= 0")
+
+        for key in ("num_fake", "num_pharmacy", "num_covert_porn", "num_account_farming", "num_harassment", "num_like_inflation"):
+            val = self.fishy_accounts.get(key, 0)
+            if not isinstance(val, int) or val < 0:
+                errs.append(f"fishy_accounts.{key}={val}: must be non-negative int")
 
         if errs:
             raise AssertionError("Config invariants violated:\n  " + "\n  ".join(errs))

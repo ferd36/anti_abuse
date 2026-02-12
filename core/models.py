@@ -49,6 +49,9 @@ class User:
       - join_date is not in the future.
       - country is a valid ISO 3166-1 alpha-2 code from the allowed set.
       - ip_address is a valid IPv4 address.
+      - registration_ip is the IPv4 address used at account creation (join_date).
+      - registration_country is where the user signed up; equals country unless moved.
+      - address is current address string; for moved users, reflects new location.
       - ip_type is a valid IPType enum member.
       - language is a valid language code from the allowed set.
       - is_active is a boolean.
@@ -65,6 +68,9 @@ class User:
     join_date: datetime
     country: str
     ip_address: str
+    registration_ip: str  # IP used at account creation (matches registration_country)
+    registration_country: str  # Where user signed up; differs from country when moved
+    address: str  # Current address; for moved users, reflects new location
     ip_type: IPType
     language: str
     is_active: bool = True
@@ -107,6 +113,21 @@ class User:
         # --- ip_address ---
         assert isinstance(self.ip_address, str) and _IPV4_RE.match(self.ip_address), (
             f"ip_address must be a valid IPv4 address, got {self.ip_address!r}"
+        )
+
+        # --- registration_ip ---
+        assert isinstance(self.registration_ip, str) and _IPV4_RE.match(self.registration_ip), (
+            f"registration_ip must be a valid IPv4 address, got {self.registration_ip!r}"
+        )
+
+        # --- registration_country ---
+        assert self.registration_country in VALID_COUNTRIES, (
+            f"registration_country must be one of {VALID_COUNTRIES}, got {self.registration_country!r}"
+        )
+
+        # --- address ---
+        assert isinstance(self.address, str), (
+            f"address must be a string, got {type(self.address)}"
         )
 
         # --- ip_type ---

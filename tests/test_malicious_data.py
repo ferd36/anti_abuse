@@ -669,6 +669,7 @@ class TestGenerateMaliciousEvents:
         assert "credential_tester" in patterns
         assert "connection_harvester" in patterns
         assert "sleeper_agent" in patterns
+        assert "executive_hunter" in patterns
 
     def test_multiple_victims(
         self, all_user_ids: list[str], user_countries: dict[str, str]
@@ -722,5 +723,5 @@ class TestGenerateMaliciousEvents:
                 "credential_stuffer", "login_storm", "stealth_takeover",
                 "scraper_cluster", "spear_phisher", "credential_tester",
                 "connection_harvester", "sleeper_agent", "fake_account",
-                "profile_defacement",
+                "profile_defacement", "executive_hunter",
             }

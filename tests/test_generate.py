@@ -20,8 +20,9 @@ def _minimal_corpus():
         User(
             user_id="u-1", email="a@b.com",
             join_date=now - timedelta(days=1), country="US",
-            ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
-            language="en", is_active=True,
+            ip_address="1.2.3.4", registration_ip="1.2.3.4",
+            registration_country="US", address="",
+            ip_type=IPType.RESIDENTIAL, language="en", is_active=True,
         ),
     ]
     profiles = [

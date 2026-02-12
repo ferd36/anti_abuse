@@ -40,20 +40,23 @@ def repo_with_data(now: datetime) -> Repository:
         User(
             user_id="u-0001", email="alice@example.com",
             join_date=now - timedelta(days=30), country="US",
-            ip_address="203.0.113.1", ip_type=IPType.RESIDENTIAL,
-            language="en", is_active=True,
+            ip_address="203.0.113.1", registration_ip="203.0.113.1",
+            registration_country="US", address="123 Main St",
+            ip_type=IPType.RESIDENTIAL, language="en", is_active=True,
         ),
         User(
             user_id="u-0002", email="bob@example.com",
             join_date=now - timedelta(days=20), country="GB",
-            ip_address="198.51.100.1", ip_type=IPType.RESIDENTIAL,
-            language="en", is_active=True,
+            ip_address="198.51.100.1", registration_ip="198.51.100.1",
+            registration_country="GB", address="1 High St",
+            ip_type=IPType.RESIDENTIAL, language="en", is_active=True,
         ),
         User(
             user_id="u-0003", email="charlie@example.com",
             join_date=now - timedelta(days=10), country="DE",
-            ip_address="198.51.100.2", ip_type=IPType.HOSTING,
-            language="de", is_active=False,
+            ip_address="198.51.100.2", registration_ip="198.51.100.2",
+            registration_country="DE", address="",
+            ip_type=IPType.HOSTING, language="de", is_active=False,
         ),
     ]
     repo.insert_users_batch(users)
@@ -130,8 +133,9 @@ def client_with_real_repo(tmp_path, now: datetime, monkeypatch) -> FlaskClient:
     repo.insert_user(User(
         user_id="u-0001", email="test@example.com",
         join_date=now - timedelta(days=5), country="US",
-        ip_address="203.0.113.1", ip_type=IPType.RESIDENTIAL,
-        language="en", is_active=True,
+        ip_address="203.0.113.1", registration_ip="203.0.113.1",
+        registration_country="US", address="",
+        ip_type=IPType.RESIDENTIAL, language="en", is_active=True,
     ))
     repo.close()
 

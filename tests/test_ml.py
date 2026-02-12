@@ -84,8 +84,9 @@ def _make_test_db(tmp_path):
     repo.insert_user(User(
         user_id="u-1", email="a@b.com",
         join_date=now, country="US",
-        ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
-        language="en", is_active=True,
+        ip_address="1.2.3.4", registration_ip="1.2.3.4",
+        registration_country="US", address="",
+        ip_type=IPType.RESIDENTIAL, language="en", is_active=True,
     ))
     repo.insert_profiles_batch([UserProfile(
         user_id="u-1", display_name="A", headline="", summary="",

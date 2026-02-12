@@ -53,6 +53,14 @@ ATTACKER_COUNTRIES_BY_VICTIM = {
     "KR": ["CN", "RU", "NG", "JP", "UA"],
 }
 
+HARASSMENT_METADATA = [
+    {"message_length": 80, "is_spam": True, "message_text": "You're pathetic. Everyone knows what you did. Stop pretending."},
+    {"message_length": 65, "is_spam": True, "message_text": "Nobody likes you. You should just disappear. We're watching."},
+    {"message_length": 95, "is_spam": True, "message_text": "Think you're so great? Your days are numbered. We'll make sure everyone knows the truth."},
+    {"message_length": 72, "is_spam": True, "message_text": "You're a fraud. We've got proof. Time to face the consequences."},
+    {"message_length": 58, "is_spam": True, "message_text": "Loser. Why do you even bother? Give up already."},
+]
+
 SPAM_METADATA = [
     {"message_length": 45, "contains_url": True, "is_spam": True,
      "message_text": "Check this out! https://bit.ly/xyz123 You won't believe it!"},

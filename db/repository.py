@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS users (
     join_date                TEXT NOT NULL,          -- ISO-8601 UTC
     country                  TEXT NOT NULL,
     ip_address               TEXT NOT NULL,
+    registration_ip          TEXT NOT NULL,          -- IP at account creation (country-matched for legit)
+    registration_country    TEXT NOT NULL,          -- where user signed up; differs from country when moved
+    address                  TEXT NOT NULL DEFAULT '', -- current address; for moved users, reflects new location
     ip_type                  TEXT NOT NULL,          -- 'residential' | 'hosting'
     language                 TEXT NOT NULL,
     is_active                INTEGER NOT NULL DEFAULT 1,   -- 0/1 boolean
@@ -130,6 +133,26 @@ class Repository:
 
     def _create_schema(self) -> None:
         self._conn.executescript(_SCHEMA_SQL)
+        # Migration: add registration_ip if missing (existing DBs)
+        try:
+            self._conn.execute("ALTER TABLE users ADD COLUMN registration_ip TEXT")
+            self._conn.execute("UPDATE users SET registration_ip = ip_address WHERE registration_ip IS NULL")
+            self._conn.commit()
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
+        # Migration: add registration_country and address if missing
+        for col, default_sql in [
+            ("registration_country", "country"),
+            ("address", "''"),
+        ]:
+            try:
+                self._conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT")
+                self._conn.execute(f"UPDATE users SET {col} = COALESCE({default_sql}, '') WHERE {col} IS NULL")
+                self._conn.commit()
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" not in str(e).lower():
+                    raise
 
     # ------------------------------------------------------------------
     # Users
@@ -139,11 +162,12 @@ class Repository:
         assert isinstance(user, User), f"Expected User, got {type(user)}"
         self._conn.execute(
             """INSERT INTO users
-               (user_id, email, join_date, country, ip_address, ip_type, language,
+               (user_id, email, join_date, country, ip_address, registration_ip,
+                registration_country, address, ip_type, language,
                 is_active, generation_pattern, email_verified, two_factor_enabled,
                 last_password_change_at, account_tier, failed_login_streak, phone_verified,
                 user_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._user_to_row(user),
         )
         self._conn.commit()
@@ -154,11 +178,12 @@ class Repository:
         rows = [self._user_to_row(u) for u in users]
         self._conn.executemany(
             """INSERT INTO users
-               (user_id, email, join_date, country, ip_address, ip_type, language,
+               (user_id, email, join_date, country, ip_address, registration_ip,
+                registration_country, address, ip_type, language,
                 is_active, generation_pattern, email_verified, two_factor_enabled,
                 last_password_change_at, account_tier, failed_login_streak, phone_verified,
                 user_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             rows,
         )
         self._conn.commit()
@@ -167,7 +192,8 @@ class Repository:
     def _user_to_row(u: User) -> tuple:
         return (
             u.user_id, u.email, _dt_to_iso(u.join_date), u.country,
-            u.ip_address, u.ip_type.value, u.language, 1 if u.is_active else 0,
+            u.ip_address, u.registration_ip, u.registration_country, u.address,
+            u.ip_type.value, u.language, 1 if u.is_active else 0,
             u.generation_pattern, 1 if u.email_verified else 0,
             1 if u.two_factor_enabled else 0,
             _dt_to_iso(u.last_password_change_at) if u.last_password_change_at else None,
@@ -247,6 +273,9 @@ class Repository:
             join_date=_iso_to_dt(row["join_date"]),
             country=row["country"],
             ip_address=row["ip_address"],
+            registration_ip=row["registration_ip"] if "registration_ip" in keys else row["ip_address"],
+            registration_country=row["registration_country"] if "registration_country" in keys else row["country"],
+            address=row["address"] if "address" in keys else "",
             ip_type=IPType(row["ip_type"]),
             language=row["language"],
             is_active=bool(row["is_active"]),

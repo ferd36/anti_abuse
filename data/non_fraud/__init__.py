@@ -143,9 +143,9 @@ def generate_legitimate_events(
             user_id=user.user_id,
             interaction_type=InteractionType.ACCOUNT_CREATION,
             timestamp=create_ts,
-            ip_address=user.ip_address,
+            ip_address=user.registration_ip,
             ip_type=user.ip_type,
-            metadata={"user_agent": ua, "ip_country": user.country},
+            metadata={"user_agent": ua, "ip_country": user.registration_country},
         ))
 
         # 2. Pattern-specific sessions
@@ -168,7 +168,7 @@ def generate_legitimate_events(
                 timestamp=close_ts,
                 ip_address=user.ip_address,
                 ip_type=user.ip_type,
-                metadata={"user_agent": ua, "ip_country": user.country},
+                metadata={"user_agent": ua, "ip_country": user.registration_country},
             ))
         elif not user.is_active and not pattern_events:
             close_ts = min(create_ts + timedelta(minutes=rng.randint(5, 60)), now)
@@ -180,7 +180,7 @@ def generate_legitimate_events(
                 timestamp=close_ts,
                 ip_address=user.ip_address,
                 ip_type=user.ip_type,
-                metadata={"user_agent": ua, "ip_country": user.country},
+                metadata={"user_agent": ua, "ip_country": user.registration_country},
             ))
 
         processed += 1

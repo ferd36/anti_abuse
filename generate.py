@@ -25,11 +25,7 @@ from config import DATASET_CONFIG
 from core.validate import enforce_temporal_invariants, validate_corpus
 from db.repository import Repository
 from data.fraud import generate_malicious_events
-from data.mock_data import (
-    FAKE_ACCOUNT_USER_IDS,
-    _enforce_close_account_invariant,
-    generate_all,
-)
+from data.mock_data import _enforce_close_account_invariant, generate_all
 
 
 def main() -> None:
@@ -79,14 +75,23 @@ def main() -> None:
     user_countries = {u.user_id: u.country for u in users}
     user_connections_count = {p.user_id: p.connections_count for p in profiles}
     user_display_names = {p.user_id: p.display_name for p in profiles}
+    user_headlines = {p.user_id: p.headline for p in profiles}
     user_ids = [u.user_id for u in users]
     user_is_active = {u.user_id: u.is_active for u in users}
+    fake_account_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "fake_account"]
+    account_farming_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "account_farming"]
+    harassment_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_harassment"]
+    like_inflation_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_like_inflation"]
     ato_events, victim_to_pattern = generate_malicious_events(
         user_ids, user_countries,
         user_connections_count=user_connections_count,
         user_is_active=user_is_active,
         user_display_names=user_display_names,
-        fake_account_user_ids=FAKE_ACCOUNT_USER_IDS,
+        user_headlines=user_headlines,
+        fake_account_user_ids=fake_account_user_ids,
+        account_farming_user_ids=account_farming_user_ids,
+        harassment_user_ids=harassment_user_ids,
+        like_inflation_user_ids=like_inflation_user_ids,
         seed=99,
         fraud_pct=args.fraud_pct,
         config=DATASET_CONFIG,

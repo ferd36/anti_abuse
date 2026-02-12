@@ -30,7 +30,12 @@ from datetime import datetime, timedelta, timezone
 from core.constants import (
     GENERATION_PATTERN_CLEAN,
     INTERACTION_WINDOW_DAYS,
+    NUM_ACCOUNT_FARMING_ACCOUNTS,
+    NUM_COVERT_PORN_ACCOUNTS,
     NUM_FAKE_ACCOUNTS,
+    NUM_HARASSMENT_ACCOUNTS,
+    NUM_LIKE_INFLATION_ACCOUNTS,
+    NUM_PHARMACY_ACCOUNTS,
     NUM_USERS,
 )
 from core.enums import InteractionType, IPType
@@ -102,6 +107,15 @@ _FIRST_NAMES = [
     "Raj", "Sita", "Mohammed", "Aisha", "Pierre", "Claire", "Luca", "Giulia",
     "Sven", "Ingrid", "Jan", "Eva", "Oleg", "Natasha", "Chen", "Mei",
     "Kenji", "Sakura", "David", "Sarah", "Michael", "Emma", "Daniel", "Laura",
+    "Robert", "Jennifer", "Christopher", "Lisa", "Matthew", "Amanda", "Anthony", "Melissa",
+    "Mark", "Stephanie", "Donald", "Rebecca", "Steven", "Laura", "Paul", "Nicole",
+    "Andrew", "Elizabeth", "Joshua", "Megan", "Kenneth", "Heather", "Kevin", "Rachel",
+    "Brian", "Samantha", "George", "Christina", "Timothy", "Amy", "Ronald", "Michelle",
+    "Edward", "Angela", "Jason", "Tiffany", "Jeffrey", "Kelly", "Ryan", "Diana",
+    "Jacob", "Ashley", "Gary", "Kimberly", "Nicholas", "Emily", "Eric", "Donna",
+    "Jonathan", "Carol", "Stephen", "Michelle", "Larry", "Patricia", "Justin", "Deborah",
+    "Scott", "Dorothy", "Brandon", "Karen", "Benjamin", "Betty", "Samuel", "Helen",
+    "Raymond", "Sandra", "Gregory", "Ashley", "Frank", "Katherine", "Alexander", "Margaret",
 ]
 
 _LAST_NAMES = [
@@ -110,7 +124,142 @@ _LAST_NAMES = [
     "Okafor", "Santos", "Nguyen", "Lee", "Chen", "Andersen", "Dubois",
     "Rossi", "Fernandez", "Martinez", "Lopez", "Gonzalez", "Wilson", "Taylor",
     "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson",
+    "Moore", "Robinson", "Clark", "Lewis", "Rodriguez", "Walker", "Hall",
+    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker",
+    "Adams", "Nelson", "Hill", "Campbell", "Mitchell", "Roberts", "Carter",
+    "Phillips", "Evans", "Turner", "Torres", "Parker", "Collins", "Edwards",
+    "Stewart", "Flores", "Morris", "Murphy", "Rivera", "Cook", "Rogers",
+    "Morgan", "Peterson", "Cooper", "Reed", "Bailey", "Bell", "Gomez",
+    "Kelly", "Howard", "Ward", "Cox", "Diaz", "Richardson", "Wood", "Watson",
+    "Brooks", "Bennett", "Gray", "James", "Reyes", "Cruz", "Hughes", "Price",
+    "Myers", "Long", "Foster", "Sanders", "Ross", "Morales", "Powell", "Sullivan",
 ]
+
+# Spanish first/last names, headlines, summaries
+_FIRST_NAMES_ES = [
+    "Carlos", "María", "José", "Ana", "Antonio", "Francisco", "Miguel", "Carmen",
+    "David", "Laura", "Pablo", "Elena", "Javier", "Sara", "Daniel", "Isabel",
+    "Alejandro", "Lucía", "Manuel", "Paula", "Raúl", "Sofía", "Pedro", "Claudia",
+]
+_LAST_NAMES_ES = [
+    "García", "Rodríguez", "Martínez", "López", "González", "Fernández", "Pérez", "Sánchez",
+    "Ramírez", "Torres", "Flores", "Rivera", "Gómez", "Díaz", "Reyes", "Morales",
+    "Hernández", "Jiménez", "Ruiz", "Ortiz", "Moreno", "Álvarez", "Romero", "Castillo",
+]
+_HEADLINES_ES = [
+    "Ingeniero de Software", "Director de Producto", "Científico de Datos",
+    "Director de Marketing", "Diseñador UX", "Ejecutivo de Ventas",
+    "Desarrollador Full Stack", "Analista de Negocios", "Gerente de RRHH",
+    "Ingeniero DevOps", "CEO y Fundador", "Consultor",
+    "Estudiante", "Escritor Freelance", "Diseñador Gráfico",
+    "Ingeniero Aeroespacial", "Piloto comercial", "Arquitecto de Software",
+]
+_SUMMARIES_ES = [
+    "Apasionado por crear grandes productos.",
+    "Profesional con más de 10 años de experiencia.",
+    "Buscando nuevas oportunidades y conexiones.",
+    "Me encanta colaborar en equipo para resolver problemas difíciles.",
+    "Enfocado en impulsar el crecimiento y la innovación.",
+    "Comprometido con el aprendizaje continuo.",
+    "Entusiasta de la tecnología y su impacto en la sociedad.",
+    "Ayudando a equipos a ser más rápidos y eficientes.",
+    "Siempre curioso. Siempre aprendiendo.",
+    "Conectando personas e ideas.",
+    "Construyendo el futuro, un commit a la vez.",
+    "Experto en sistemas distribuidos y escalabilidad.",
+    "Apasionado por la experiencia de usuario.",
+    "Ex fundador de startups. Ahora asesorando e invirtiendo.",
+    "",  # Algunos usuarios dejan el resumen vacío
+]
+
+# German first/last names, headlines, summaries
+_FIRST_NAMES_DE = [
+    "Hans", "Anna", "Peter", "Maria", "Michael", "Lisa", "Thomas", "Julia",
+    "Andreas", "Sarah", "Stefan", "Laura", "Christian", "Jennifer", "Markus", "Jessica",
+    "Florian", "Katharina", "Alexander", "Christina", "Martin", "Sabine", "Daniel", "Nina",
+]
+_LAST_NAMES_DE = [
+    "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker",
+    "Schulz", "Hoffmann", "Koch", "Richter", "Klein", "Wolf", "Schröder", "Neumann",
+    "Schwarz", "Zimmermann", "Braun", "Krüger", "Hartmann", "Lange", "Schmitt", "Werner",
+]
+_HEADLINES_DE = [
+    "Software-Ingenieur", "Produktmanager", "Data Scientist",
+    "Marketing-Direktor", "UX-Designer", "Vertriebsleiter",
+    "Full-Stack-Entwickler", "Business Analyst", "Personalmanager",
+    "DevOps-Ingenieur", "CEO & Gründer", "Berater",
+    "Student", "Freier Schriftsteller", "Grafikdesigner",
+    "Luftfahrtingenieur", "Linienpilot", "Software-Architekt",
+]
+_SUMMARIES_DE = [
+    "Leidenschaftlich daran, großartige Produkte zu entwickeln.",
+    "Erfahrener Profi mit über 10 Jahren Branchenerfahrung.",
+    "Suche nach neuen Möglichkeiten und Kontakten.",
+    "Arbeite gerne im Team an schwierigen Problemen.",
+    "Fokus auf Wachstum und Innovation.",
+    "Engagiert für kontinuierliches Lernen.",
+    "Begeistert von Technologie und ihrer Wirkung.",
+    "Helfe Teams, schneller und smarter zu arbeiten.",
+    "Immer neugierig. Immer am Lernen.",
+    "Verbinde Menschen und Ideen.",
+    "Baue die Zukunft, ein Commit nach dem anderen.",
+    "Experte für verteilte Systeme und Skalierung.",
+    "Leidenschaft für Nutzererlebnis und Barrierefreiheit.",
+    "Ehemaliger Startup-Gründer. Jetzt Beratung und Investition.",
+    "",  # Manche Nutzer lassen die Zusammenfassung leer
+]
+
+# Japanese first/last names (kanji), headlines, summaries
+_FIRST_NAMES_JA = [
+    "浩", "由紀", "武", "桜", "健二", "花", "悠人", "愛子",
+    "陽翔", "芽", "颯太", "凛", "海斗", "美羽", "陸", "空",
+    "大輝", "陽葵", "蓮", "結衣", "翔太", "真奈", "隼人", "明里",
+]
+_LAST_NAMES_JA = [
+    "田中", "鈴木", "高橋", "渡辺", "山本", "山田", "佐藤", "斎藤",
+    "小林", "加藤", "吉田", "山口", "松本", "井上", "木村", "林",
+    "清水", "森", "阿部", "池田", "橋本", "山下", "石川", "中島",
+]
+_HEADLINES_JA = [
+    "ソフトウェアエンジニア", "プロダクトマネージャー", "データサイエンティスト",
+    "マーケティングディレクター", "UXデザイナー", "営業担当",
+    "フルスタック開発者", "ビジネスアナリスト", "人事マネージャー",
+    "DevOpsエンジニア", "CEO・創業者", "コンサルタント",
+    "学生", "フリーランスライター", "グラフィックデザイナー",
+    "航空宇宙エンジニア", "パイロット", "ソフトウェアアーキテクト",
+]
+_SUMMARIES_JA = [
+    "素晴らしいプロダクトを作ることに情熱を注いでいます。",
+    "10年以上の経験を持つプロフェッショナルです。",
+    "新しい機会とつながりを探しています。",
+    "チームで難しい問題を解決するのが好きです。",
+    "成長とイノベーションに注力しています。",
+    "継続的な学習と改善に取り組んでいます。",
+    "技術と社会への影響に熱心です。",
+    "チームの効率化をお手伝いします。",
+    "常に好奇心を持ち、学び続けています。",
+    "人とアイデアをつなぎます。",
+    "一つのコミットから未来を築いています。",
+    "分散システムとスケーラビリティの専門家です。",
+    "ユーザー体験とアクセシビリティに情熱を注いでいます。",
+    "元スタートアップ創業者。今はアドバイザーと投資家。",
+    "",  # 要約を空欄にするユーザーもいます
+]
+
+# Language -> (first_names, last_names, headlines, summaries) for genuine users
+_LANG_CONTENT: dict[str, tuple[list[str], list[str], list[str], list[str]]] = {
+    "es": (_FIRST_NAMES_ES, _LAST_NAMES_ES, _HEADLINES_ES, _SUMMARIES_ES),
+    "de": (_FIRST_NAMES_DE, _LAST_NAMES_DE, _HEADLINES_DE, _SUMMARIES_DE),
+    "ja": (_FIRST_NAMES_JA, _LAST_NAMES_JA, _HEADLINES_JA, _SUMMARIES_JA),
+}
+
+
+def _get_content_for_lang(lang: str) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Return (first_names, last_names, headlines, summaries) for the given language."""
+    if lang in _LANG_CONTENT:
+        return _LANG_CONTENT[lang]
+    return (_FIRST_NAMES, _LAST_NAMES, _HEADLINES, _SUMMARIES)
+
 
 # Email domains (weights approximate real-world distribution)
 _EMAIL_DOMAINS = [
@@ -134,6 +283,33 @@ _HEADLINES = [
     "Entrepreneur", "Investor", "Recruiter", "Copywriter",
     "Data Analyst", "Frontend Developer", "Backend Engineer",
     "Security Engineer", "QA Engineer", "Support Specialist",
+    "Solutions Architect", "Growth Hacker", "Content Strategist",
+    "Customer Success Manager", "Supply Chain Manager", "Brand Manager",
+    "Engineering Manager", "VP of Product", "Chief of Staff",
+    "Compliance Officer", "Risk Analyst", "Treasury Analyst",
+    "Business Development Lead", "Partnership Manager", "Channel Sales",
+    "Infrastructure Engineer", "Site Reliability Engineer", "Platform Engineer",
+    "Mobile Developer", "iOS Developer", "Android Developer",
+    "Blockchain Developer", "Game Developer", "Embedded Engineer",
+    "Technical Writer", "Documentation Specialist", "Community Manager",
+    "Social Media Manager", "Digital Marketing Lead", "SEO Specialist",
+    "Event Coordinator", "Office Manager", "Executive Assistant",
+    "Physician", "Software Architect", "Principal Engineer",
+    "Director of Engineering", "CTO", "COO",
+    "Sales Director", "Regional Manager", "Territory Representative",
+    "Logistics Coordinator", "Manufacturing Lead", "Quality Assurance",
+    "Auditor", "Tax Consultant", "Insurance Advisor",
+    "Real Estate Agent", "Urban Planner", "Civil Engineer",
+    "Mechanical Engineer", "Electrical Engineer", "Chemical Engineer",
+    "Biologist", "Pharmacist", "Veterinarian",
+    "Chef", "Photographer", "Videographer",
+    "Musician", "Artist", "Interior Designer",
+    "Public Relations Manager", "Journalist", "Editor",
+    "Aerospace Engineer", "Aircraft Design Engineer", "Flight Test Engineer",
+    "Avionics Engineer", "Propulsion Engineer", "Aerodynamics Specialist",
+    "Commercial Pilot", "Flight Instructor", "Airline Captain",
+    "Aerospace Systems Analyst", "Aircraft Maintenance Engineer", "Flight Operations Manager",
+    "Spacecraft Engineer", "Satellite Systems Engineer", "Mission Control Specialist",
 ]
 
 _SUMMARIES = [
@@ -157,7 +333,114 @@ _SUMMARIES = [
     "15 years in fintech. Now exploring AI/ML.",
     "Making complex things simple.",
     "Believe in work-life balance and sustainable pace.",
+    "Driving digital transformation across organizations.",
+    "Specializing in high-performance systems and scale.",
+    "Customer-obsessed. Data-driven. Results-focused.",
+    "Building products that matter.",
+    "Ex-consultant. Now scaling startups.",
+    "Passionate about clean code and great design.",
+    "Connecting technology with business outcomes.",
+    "Bringing ideas to life through code.",
+    "Advocate for inclusive design and accessibility.",
+    "Helping companies navigate cloud and infrastructure.",
+    "Experienced in B2B SaaS and enterprise sales.",
+    "Building and scaling high-performing teams.",
+    "Focused on product-market fit and growth.",
+    "Strategic thinker with execution bias.",
+    "Bringing operational excellence to startups.",
+    "Cross-functional leader. Problem solver.",
+    "Expert in agile and lean methodologies.",
+    "Turning data into actionable insights.",
+    "Committed to sustainable business practices.",
+    "Networker. Connector. Relationship builder.",
+    "Former journalist. Now in tech.",
+    "Dual background in engineering and business.",
+    "Helping founders tell their story.",
+    "Building communities and brand loyalty.",
+    "Specializing in go-to-market strategy.",
+    "Love the intersection of design and engineering.",
+    "Bridge between technical and non-technical teams.",
+    "Optimizing processes and removing friction.",
+    "Creating memorable user experiences.",
+    "Making healthcare more accessible through technology.",
+    "Passionate about education and learning platforms.",
+    "Building tools for creators and makers.",
+    "Exploring the future of work.",
+    "Committed to ethical AI and responsible tech.",
+    "Aerospace engineer specializing in structural design and fatigue analysis.",
+    "Pilot. Aviation enthusiast. Safety-first mindset.",
+    "15 years in aircraft maintenance and certification.",
+    "Building the future of flight. Previously at major OEMs.",
+    "Passionate about sustainable aviation and hybrid propulsion.",
+    "Flight test engineer. Turning specs into validated aircraft.",
+    "Avionics and flight control systems. Love complex systems.",
+    "From military aviation to commercial. Still flying.",
+    "Spacecraft systems engineer. Mission-critical experience.",
+    "Aerodynamics and CFD. Making things fly efficiently.",
+    "Airline operations and fleet management experience.",
+    "Bringing aerospace rigor to new ventures.",
     "",  # Some users leave summary empty
+]
+
+# Fishy pharmacy profiles: fronts for foreign "pharmacies" using covert drug names
+_PHARMACY_HEADLINES = [
+    "International Pharmacy Consultant", "Healthcare Advisor", "Medication Specialist",
+    "Global Wellness Supplier", "Pharmacy Liaison", "Health Products Distributor",
+    "Online Pharmacy Representative", "European Pharmacies Partner",
+    "Alternative Medicine Provider", "Prescription Services Coordinator",
+]
+_PHARMACY_WEBSITES = [
+    "https://meds-express.in", "https://pharma24.mx", "https://rx-shop.co.in",
+    "https://meds-express-turkey.com", "https://pharma365.ru",
+    "https://cheap-rx-thailand.net", "https://generic-pharma.pk",
+    "https://meds-express-ph.com", "https://rx-vietnam.com",
+    "https://pharma-express.co.uk", "https://canada-rx.net",
+]
+_PHARMACY_SUMMARIES = [
+    "Discrete worldwide shipping. Quality products. Visit our site for skittles, beans, and candy. No prescription needed.",
+    "Trusted source for molly, E, and rolls. Fast delivery from multiple locations. Contact us.",
+    "Premium oxy, blues, percs. Best prices. Visit {url} for catalog.",
+    "We carry green, bud, herb. Wholesale and retail. Orders at {url}",
+    "Reliable delivery of boy, H, dope. Discreet packaging. {url}",
+    "Snow, white, powder available. Multiple international locations. {url}",
+    "Bars, xans, xannies in stock. EU and Asia shipping. Visit {url}",
+    "Addy, speed, uppers. Fast delivery. {url}",
+    "Downers, zans, tranqs. Quality guaranteed. Visit {url} for menu.",
+]
+
+# Fishy covert porn profiles: fronts using euphemistic adult content
+_PORN_HEADLINES = [
+    "Adult Content Creator", "Entertainment Industry Pro", "Premium Content Producer",
+    "Independent Creator", "Digital Media Artist", "Exclusive Content Provider",
+    "Lifestyle Content Creator", "Cam Model Representative", "Fan Club Manager",
+    "Adult Entertainment Liaison",
+]
+_PORN_WEBSITES = [
+    "https://premium-content.co", "https://exclusive-fans.net", "https://adult-cam.live",
+    "https://private-shows.eu", "https://fan-club-xxx.ru", "https://adult-dating.in",
+    "https://premium-pics.co.uk", "https://private-vids.com", "https://exclusive-only.net",
+    "https://adult-entertainment.mx",
+]
+_PORN_SUMMARIES = [
+    "Exclusive content. Premium pics and vids. DM for link. Visit {url}",
+    "Private shows available. 18+ only. Discreet. {url}",
+    "Fan club with exclusive content. Multiple platforms. Link in bio: {url}",
+    "Adult entertainment. Cam sessions. Worldwide. {url}",
+    "Premium adult content. No limits. {url}",
+    "Exclusive uncensored content. {url}",
+    "Private adult content creator. DM for menu. {url}",
+    "18+ premium entertainment. Various formats. {url}",
+]
+
+# Bogus profiles filled by account-farming buyers
+_FARMING_HEADLINES = [
+    "Freelancer", "Looking for opportunities", "Open to work",
+    "Entrepreneur", "Consultant", "Independent",
+]
+_FARMING_SUMMARIES = [
+    "Just getting started. Open to new connections.",
+    "Building my network. Connect with me!",
+    "Here to learn and grow. Let's connect.",
 ]
 
 _LOCATIONS = [
@@ -172,9 +455,75 @@ _LOCATIONS = [
     "Seattle, WA", "Chicago, IL", "Austin, TX", "Boston, MA", "Denver, CO",
     "Vancouver, BC", "Melbourne, Australia", "Singapore", "Hong Kong",
     "Dublin, Ireland", "Zurich, Switzerland", "Barcelona, Spain",
+    "Los Angeles, CA", "Houston, TX", "Phoenix, AZ", "Philadelphia, PA", "San Antonio, TX",
+    "San Diego, CA", "Dallas, TX", "San Jose, CA", "Indianapolis, IN", "Jacksonville, FL",
+    "Columbus, OH", "Charlotte, NC", "Milwaukee, WI", "Baltimore, MD", "Portland, OR",
+    "Atlanta, GA", "Miami, FL", "Minneapolis, MN", "Detroit, MI", "Las Vegas, NV",
+    "Munich, Germany", "Hamburg, Germany", "Cologne, Germany", "Frankfurt, Germany",
+    "Lyon, France", "Marseille, France", "Toulouse, France", "Bordeaux, France",
+    "Milan, Italy", "Naples, Italy", "Turin, Italy", "Florence, Italy",
+    "Oslo, Norway", "Copenhagen, Denmark", "Helsinki, Finland", "Reykjavik, Iceland",
+    "Prague, Czech Republic", "Vienna, Austria", "Budapest, Hungary", "Lisbon, Portugal",
+    "Athens, Greece", "Belgrade, Serbia", "Sofia, Bulgaria", "Zagreb, Croatia",
+    "Buenos Aires, Argentina", "Lima, Peru", "Bogotá, Colombia", "Santiago, Chile",
+    "Medellín, Colombia", "Quito, Ecuador", "Montevideo, Uruguay", "Caracas, Venezuela",
+    "Johannesburg, South Africa", "Nairobi, Kenya", "Accra, Ghana", "Addis Ababa, Ethiopia",
+    "Casablanca, Morocco", "Algiers, Algeria", "Tunis, Tunisia",
+    "Jakarta, Indonesia", "Kuala Lumpur, Malaysia", "Taipei, Taiwan", "Hanoi, Vietnam",
+    "Beijing, China", "Shenzhen, China", "Guangzhou, China", "Chengdu, China",
+    "Delhi, India", "Bangalore, India", "Chennai, India", "Hyderabad, India",
+    "Kolkata, India", "Ahmedabad, India", "Pune, India",
+    "Auckland, New Zealand", "Wellington, New Zealand", "Christchurch, New Zealand",
+    "Dubai, UAE", "Riyadh, Saudi Arabia", "Tel Aviv, Israel", "Doha, Qatar",
+    "Kuwait City, Kuwait", "Muscat, Oman", "Manama, Bahrain",
+    "Edinburgh, UK", "Manchester, UK", "Birmingham, UK", "Leeds, UK", "Glasgow, UK",
+    "Calgary, Canada", "Montreal, Canada", "Ottawa, Canada", "Quebec City, Canada",
+    "Perth, Australia", "Brisbane, Australia", "Adelaide, Australia", "Canberra, Australia",
     "",  # Some users don't set location
     "",
 ]
+
+# Addresses by country (for user.address); subset of _LOCATIONS
+_ADDRESSES_BY_COUNTRY: dict[str, list[str]] = {
+    "US": ["New York, NY", "San Francisco, CA", "Chicago, IL", "Austin, TX", "Boston, MA", "Seattle, WA", "Denver, CO"],
+    "GB": ["London, UK", "Manchester, UK", "Birmingham, UK", "Edinburgh, UK", "Leeds, UK"],
+    "DE": ["Berlin, Germany", "Munich, Germany", "Hamburg, Germany", "Cologne, Germany", "Frankfurt, Germany"],
+    "FR": ["Paris, France", "Lyon, France", "Marseille, France", "Toulouse, France", "Bordeaux, France"],
+    "CA": ["Toronto, Canada", "Vancouver, BC", "Montreal, Canada", "Calgary, Canada", "Ottawa, Canada"],
+    "AU": ["Sydney, Australia", "Melbourne, Australia", "Brisbane, Australia", "Perth, Australia", "Adelaide, Australia"],
+    "IN": ["Mumbai, India", "Delhi, India", "Bangalore, India", "Chennai, India", "Hyderabad, India"],
+    "JP": ["Tokyo, Japan", "Osaka", "Nagoya", "Yokohama", "Kyoto"],
+    "BR": ["São Paulo, Brazil", "Rio de Janeiro, Brazil", "Brasília, Brazil", "Salvador, Brazil"],
+    "MX": ["Mexico City, Mexico", "Guadalajara, Mexico", "Monterrey, Mexico"],
+    "ES": ["Madrid, Spain", "Barcelona, Spain", "Valencia, Spain"],
+    "IT": ["Rome, Italy", "Milan, Italy", "Naples, Italy", "Turin, Italy", "Florence, Italy"],
+    "NL": ["Amsterdam, Netherlands", "Rotterdam, Netherlands", "The Hague, Netherlands"],
+    "RU": ["Moscow, Russia", "Saint Petersburg, Russia"],
+    "CN": ["Shanghai, China", "Beijing, China", "Shenzhen, China", "Guangzhou, China"],
+    "KR": ["Seoul, South Korea", "Busan, South Korea"],
+    "PL": ["Warsaw, Poland", "Kraków, Poland"],
+    "SE": ["Stockholm, Sweden"],
+    "VN": ["Ho Chi Minh City, Vietnam", "Hanoi, Vietnam"],
+    "PH": ["Manila, Philippines", "Cebu City, Philippines"],
+    "TR": ["Istanbul, Turkey", "Ankara, Turkey"],
+    "NG": ["Lagos, Nigeria", "Abuja, Nigeria"],
+    "ZA": ["Cape Town, South Africa", "Johannesburg, South Africa"],
+    "ID": ["Jakarta, Indonesia", "Surabaya, Indonesia"],
+    "PK": ["Karachi, Pakistan", "Lahore, Pakistan"],
+    "TH": ["Bangkok, Thailand"],
+    "UA": ["Kyiv, Ukraine"],
+    "RO": ["Bucharest, Romania"],
+    "BD": ["Dhaka, Bangladesh"],
+    "EG": ["Cairo, Egypt"],
+}
+
+
+def _pick_address_for_country(country: str, rng: random.Random) -> str:
+    """Return a random address string for the given country."""
+    addrs = _ADDRESSES_BY_COUNTRY.get(country)
+    if addrs:
+        return rng.choice(addrs)
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -379,21 +728,40 @@ def _generate_users(
     used_emails: set[str] = set()
     name_map: dict[str, tuple[str, str]] = {}
 
+    move_pct = get_cfg(cfg, "users", "move_pct", default=0.04)
+
     for i in range(num_users):
         user_id = f"u-{i:06d}"
-        country = rng.choices(_COUNTRIES, weights=_COUNTRY_W, k=1)[0]
-        languages = _COUNTRY_LANG.get(country, ("en",))
+        registration_country = rng.choices(_COUNTRIES, weights=_COUNTRY_W, k=1)[0]
+        languages = _COUNTRY_LANG.get(registration_country, ("en",))
         language = rng.choice(languages)
+
+        # Small fraction of users "move" to another country; legit activity uses new-country IPs
+        moved = rng.random() < move_pct
+        if moved:
+            other_countries = [c for c in _COUNTRIES if c != registration_country]
+            if other_countries:
+                country = rng.choice(other_countries)
+                languages = _COUNTRY_LANG.get(country, ("en",))
+                language = rng.choice(languages)
+            else:
+                country = registration_country
+                moved = False
+        else:
+            country = registration_country
 
         is_hosting = rng.random() < get_cfg(cfg, "users", "hosting_ip_pct", default=0.10)
         ip_type = IPType.HOSTING if is_hosting else IPType.RESIDENTIAL
+        registration_ip = _random_ip_for_country(registration_country, rng)
         ip_address = _random_ip_for_country(country, rng)
+        address = _pick_address_for_country(country, rng)
 
         days_ago = rng.randint(1, 730)
         join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
 
-        first = rng.choice(_FIRST_NAMES)
-        last = rng.choice(_LAST_NAMES)
+        first_names, last_names, _, _ = _get_content_for_lang(language)
+        first = rng.choice(first_names)
+        last = rng.choice(last_names)
         name_map[user_id] = (first, last)
         email = (
             _make_random_email(rng, used_emails)
@@ -436,6 +804,9 @@ def _generate_users(
             join_date=join_date,
             country=country,
             ip_address=ip_address,
+            registration_ip=registration_ip,
+            registration_country=registration_country,
+            address=address,
             ip_type=ip_type,
             language=language,
             is_active=is_active,
@@ -452,9 +823,41 @@ def _generate_users(
     return users, used_emails, name_map
 
 
-# Export for generate.py / fraud
+def _fishy_counts(config: dict | None) -> tuple[int, int, int, int, int, int]:
+    """Return (num_fake, num_pharmacy, num_covert_porn, num_account_farming, num_harassment, num_like_inflation)."""
+    cfg = config or {}
+    return (
+        get_cfg(cfg, "fishy_accounts", "num_fake", default=NUM_FAKE_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_pharmacy", default=NUM_PHARMACY_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_covert_porn", default=NUM_COVERT_PORN_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_account_farming", default=NUM_ACCOUNT_FARMING_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_harassment", default=NUM_HARASSMENT_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_like_inflation", default=NUM_LIKE_INFLATION_ACCOUNTS),
+    )
+
+
+# Legacy exports: use config-based counts when available; these are fallbacks for tests.
 FAKE_ACCOUNT_USER_IDS: list[str] = [
     f"u-{NUM_USERS + i:06d}" for i in range(NUM_FAKE_ACCOUNTS)
+]
+PHARMACY_ACCOUNT_USER_IDS: list[str] = [
+    f"u-{NUM_USERS + NUM_FAKE_ACCOUNTS + i:06d}" for i in range(NUM_PHARMACY_ACCOUNTS)
+]
+COVERT_PORN_ACCOUNT_USER_IDS: list[str] = [
+    f"u-{NUM_USERS + NUM_FAKE_ACCOUNTS + NUM_PHARMACY_ACCOUNTS + i:06d}"
+    for i in range(NUM_COVERT_PORN_ACCOUNTS)
+]
+ACCOUNT_FARMING_USER_IDS: list[str] = [
+    f"u-{NUM_USERS + NUM_FAKE_ACCOUNTS + NUM_PHARMACY_ACCOUNTS + NUM_COVERT_PORN_ACCOUNTS + i:06d}"
+    for i in range(NUM_ACCOUNT_FARMING_ACCOUNTS)
+]
+HARASSMENT_ACCOUNT_USER_IDS: list[str] = [
+    f"u-{NUM_USERS + NUM_FAKE_ACCOUNTS + NUM_PHARMACY_ACCOUNTS + NUM_COVERT_PORN_ACCOUNTS + NUM_ACCOUNT_FARMING_ACCOUNTS + i:06d}"
+    for i in range(NUM_HARASSMENT_ACCOUNTS)
+]
+LIKE_INFLATION_ACCOUNT_USER_IDS: list[str] = [
+    f"u-{NUM_USERS + NUM_FAKE_ACCOUNTS + NUM_PHARMACY_ACCOUNTS + NUM_COVERT_PORN_ACCOUNTS + NUM_ACCOUNT_FARMING_ACCOUNTS + NUM_HARASSMENT_ACCOUNTS + i:06d}"
+    for i in range(NUM_LIKE_INFLATION_ACCOUNTS)
 ]
 
 
@@ -465,7 +868,8 @@ def _generate_fake_account_users(
     rng: random.Random,
     now: datetime,
     used_emails: set[str],
-    base_idx: int = NUM_USERS,
+    base_idx: int,
+    count: int,
 ) -> tuple[list[User], dict[str, tuple[str, str]]]:
     """
     Generate fake account users. These are created by IP rings (shared IPs
@@ -475,7 +879,7 @@ def _generate_fake_account_users(
     users: list[User] = []
     name_map: dict[str, tuple[str, str]] = {}
 
-    for i in range(NUM_FAKE_ACCOUNTS):
+    for i in range(count):
         user_id = f"u-{base_idx + i:06d}"
         country = "RU"  # Fake accounts appear to originate from RU
         language = "ru"
@@ -506,6 +910,9 @@ def _generate_fake_account_users(
             join_date=join_date,
             country=country,
             ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
             ip_type=ip_type,
             language=language,
             is_active=True,
@@ -516,6 +923,322 @@ def _generate_fake_account_users(
             account_tier="free",
             failed_login_streak=0,
             phone_verified=False,       # Fake accounts never verify phone
+        ))
+
+    return users, name_map
+
+
+# ---------------------------------------------------------------------------
+# Pharmacy phishing users (fishy profiles for foreign drug fronts)
+# ---------------------------------------------------------------------------
+def _generate_pharmacy_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+    config: dict | None = None,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """
+    Generate pharmacy phishing users. These are fronts for foreign "pharmacies"
+    selling drugs under covert names. Profiles contain links to websites in
+    various countries and street names for drugs. Labeled pharmacy_phishing.
+    """
+    cfg = config or {}
+    hosting_pct = get_cfg(cfg, "fishy_accounts", "pharmacy", "hosting_ip_pct", default=0.15)
+    email_verified_pct = get_cfg(cfg, "fishy_accounts", "pharmacy", "email_verified_pct", default=0.3)
+
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+
+    # Pharmacy accounts originate from various countries (common for this type)
+    pharmacy_countries = ["IN", "MX", "RU", "TR", "PH", "PK", "TH", "VN", "GB", "CA"]
+    pharmacy_country_weights = [4, 3, 3, 2, 2, 2, 2, 1, 1, 1]
+
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = rng.choices(pharmacy_countries, weights=pharmacy_country_weights, k=1)[0]
+        language = "en" if country in ("US", "GB", "CA", "IN", "PH", "PK", "NG") else "en"
+
+        days_ago = rng.randint(14, 45)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first = rng.choice(_FIRST_NAMES)
+        last = rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"pharma{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"pharma{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        is_hosting = rng.random() < hosting_pct
+        ip_type = IPType.HOSTING if is_hosting else IPType.RESIDENTIAL
+        ip_address = _random_ip_for_country(country, rng)
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern="pharmacy_phishing",
+            email_verified=rng.random() < email_verified_pct,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
+        ))
+
+    return users, name_map
+
+
+# ---------------------------------------------------------------------------
+# Covert porn users (fishy profiles for adult content fronts)
+# ---------------------------------------------------------------------------
+def _generate_covert_porn_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+    config: dict | None = None,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """
+    Generate covert porn users. Fronts for adult content using euphemistic
+    headlines and links to various sites. Labeled covert_porn.
+    """
+    cfg = config or {}
+    hosting_pct = get_cfg(cfg, "fishy_accounts", "covert_porn", "hosting_ip_pct", default=0.2)
+    email_verified_pct = get_cfg(cfg, "fishy_accounts", "covert_porn", "email_verified_pct", default=0.4)
+
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+
+    porn_countries = ["US", "GB", "MX", "RU", "NL", "PH", "TH", "BR", "CA", "DE"]
+    porn_country_weights = [4, 3, 3, 2, 2, 2, 2, 1, 1, 1]
+
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = rng.choices(porn_countries, weights=porn_country_weights, k=1)[0]
+        language = "en"
+
+        days_ago = rng.randint(10, 40)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first = rng.choice(_FIRST_NAMES)
+        last = rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"creator{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"creator{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        is_hosting = rng.random() < hosting_pct
+        ip_type = IPType.HOSTING if is_hosting else IPType.RESIDENTIAL
+        ip_address = _random_ip_for_country(country, rng)
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern="covert_porn",
+            email_verified=rng.random() < email_verified_pct,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
+        ))
+
+    return users, name_map
+
+
+def _generate_account_farming_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """Accounts created by hosting IP clusters, sold to buyers who take over."""
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = "US"
+        language = "en"
+        days_ago = rng.randint(20, 45)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first, last = rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"farm{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"farm{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        ip_address = rng.choice(_FAKE_ACCOUNT_IP_POOL_RU)
+        ip_type = IPType.HOSTING
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern="account_farming",
+            email_verified=False,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
+        ))
+
+    return users, name_map
+
+
+def _generate_harassment_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """Fake accounts for coordinated harassment."""
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = "RU"
+        language = "en"
+        days_ago = rng.randint(30, 50)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first, last = rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"harass{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"harass{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        ip_address = rng.choice(_FAKE_ACCOUNT_IP_POOL_RU)
+        ip_type = IPType.HOSTING
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern="coordinated_harassment",
+            email_verified=False,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
+        ))
+
+    return users, name_map
+
+
+def _generate_like_inflation_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """Fake accounts for coordinated like inflation."""
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = "RU"
+        language = "en"
+        days_ago = rng.randint(25, 48)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first, last = rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"like{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"like{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        ip_address = rng.choice(_FAKE_ACCOUNT_IP_POOL_RU)
+        ip_type = IPType.HOSTING
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern="coordinated_like_inflation",
+            email_verified=False,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
         ))
 
     return users, name_map
@@ -534,15 +1257,42 @@ def _generate_profiles(
     """Generate a UserProfile for every user with Zipf-distributed connections."""
     cfg = config or {}
     profiles: list[UserProfile] = []
-    fake_ids = {u.user_id for u in users[-NUM_FAKE_ACCOUNTS:]}
+    fake_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "fake_account"}
+    is_pharmacy = lambda u: getattr(u, "generation_pattern", "") == "pharmacy_phishing"
+    is_covert_porn = lambda u: getattr(u, "generation_pattern", "") == "covert_porn"
+    is_account_farming = lambda u: getattr(u, "generation_pattern", "") == "account_farming"
+    is_harassment = lambda u: getattr(u, "generation_pattern", "") == "coordinated_harassment"
+    is_like_inflation = lambda u: getattr(u, "generation_pattern", "") == "coordinated_like_inflation"
 
     for user in users:
         is_fake = user.user_id in fake_ids
+        is_pharm = is_pharmacy(user)
+        is_porn = is_covert_porn(user)
+        is_farming = is_account_farming(user)
+        is_harass = is_harassment(user)
+        is_like = is_like_inflation(user)
         first, last = name_map.get(user.user_id, (rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)))
         display_name = f"{first} {last}"
 
-        headline = rng.choice(_HEADLINES)
-        summary = rng.choice(_SUMMARIES)
+        if is_pharm:
+            headline = rng.choice(_PHARMACY_HEADLINES)
+            url = rng.choice(_PHARMACY_WEBSITES)
+            summary = rng.choice(_PHARMACY_SUMMARIES).format(url=url)
+        elif is_porn:
+            headline = rng.choice(_PORN_HEADLINES)
+            url = rng.choice(_PORN_WEBSITES)
+            summary = rng.choice(_PORN_SUMMARIES).format(url=url)
+        elif is_farming:
+            headline = rng.choice(_FARMING_HEADLINES)
+            summary = rng.choice(_FARMING_SUMMARIES)
+        elif is_harass or is_like:
+            headline = rng.choice(_HEADLINES)
+            summary = rng.choice(_SUMMARIES)
+        else:
+            # Genuine user: align headline and summary with user language
+            _, _, headlines, summaries = _get_content_for_lang(user.language)
+            headline = rng.choice(headlines)
+            summary = rng.choice(summaries)
 
         connections_count = _zipf_connections(rng, cfg)
 
@@ -568,6 +1318,42 @@ def _generate_profiles(
             location_text = ""
             endorsements_count = 0
             profile_views_received = rng.randint(0, 5)
+        elif is_pharm:
+            # Pharmacy fronts: plausible-looking but minimal engagement
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "pharmacy_has_photo_pct", default=0.4)
+            location_pct = get_cfg(cfg, "fishy_accounts", "profiles", "pharmacy_location_pct", default=0.6)
+            endorsements_max = get_cfg(cfg, "fishy_accounts", "profiles", "pharmacy_endorsements_max", default=3)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = rng.choice(_LOCATIONS) if rng.random() < location_pct else ""
+            endorsements_count = rng.randint(0, endorsements_max)
+            profile_views_received = rng.randint(5, 50)
+        elif is_porn:
+            # Covert porn fronts: plausible-looking, minimal engagement
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "covert_porn_has_photo_pct", default=0.5)
+            location_pct = get_cfg(cfg, "fishy_accounts", "profiles", "covert_porn_location_pct", default=0.5)
+            endorsements_max = get_cfg(cfg, "fishy_accounts", "profiles", "covert_porn_endorsements_max", default=2)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = rng.choice(_LOCATIONS) if rng.random() < location_pct else ""
+            endorsements_count = rng.randint(0, endorsements_max)
+            profile_views_received = rng.randint(5, 80)
+        elif is_farming:
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "farming_has_photo_pct", default=0.3)
+            location_pct = get_cfg(cfg, "fishy_accounts", "profiles", "farming_location_pct", default=0.5)
+            endorsements_max = get_cfg(cfg, "fishy_accounts", "profiles", "farming_endorsements_max", default=2)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = rng.choice(_LOCATIONS) if rng.random() < location_pct else ""
+            endorsements_count = rng.randint(0, endorsements_max)
+            profile_views_received = rng.randint(0, 20)
+        elif is_harass:
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "harassment_has_photo_pct", default=0.3)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = ""
+        elif is_like:
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "like_inflation_has_photo_pct", default=0.3)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = ""
+            endorsements_count = 0
+            profile_views_received = rng.randint(0, 10)
         else:
             has_profile_photo = rng.random() < get_cfg(cfg, "profiles", "profile_photo_pct", default=0.75)
             location_text = rng.choice(_LOCATIONS)
@@ -619,6 +1405,9 @@ def _generate_interactions(
     Generate up to 2 months of interactions for all users.
 
     - Fake accounts: ACCOUNT_CREATION only (from shared IP pool).
+    - Pharmacy phishing accounts: ACCOUNT_CREATION only (minimal activity).
+    - Covert porn accounts: ACCOUNT_CREATION only (minimal activity).
+    - Account farming, harassment, like inflation: ACCOUNT_CREATION from hosting.
     - Legitimate users: pattern-based generation via non_fraud module.
       Respects temporal invariants: ACCOUNT_CREATION first, LOGIN before
       other activity, VIEW before MESSAGE/CONNECT when reaching out.
@@ -638,8 +1427,15 @@ def _generate_interactions(
         else:
             user_primary_ua[user.user_id] = rng.choice(_BROWSER_USER_AGENTS)
 
-    fake_ids = {u.user_id for u in users[-NUM_FAKE_ACCOUNTS:]}
+    fake_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "fake_account"}
+    pharmacy_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "pharmacy_phishing"}
+    porn_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "covert_porn"}
+    farming_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "account_farming"}
+    harass_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_harassment"}
+    like_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_like_inflation"}
+    excluded_ids = fake_ids | pharmacy_ids | porn_ids | farming_ids | harass_ids | like_ids
 
+    # Fake accounts: ACCOUNT_CREATION only
     for user in users:
         if user.user_id not in fake_ids:
             continue
@@ -659,6 +1455,64 @@ def _generate_interactions(
             metadata={"user_agent": primary_ua, "ip_country": "RU"},
         ))
 
+    # Pharmacy phishing accounts: ACCOUNT_CREATION only (use their own IP)
+    for user in users:
+        if user.user_id not in pharmacy_ids:
+            continue
+        primary_ua = user_primary_ua.get(user.user_id, rng.choice(_BROWSER_USER_AGENTS))
+        interaction_counter += 1
+        create_ts = user.join_date
+        if create_ts < window_start:
+            create_ts = window_start
+        interactions.append(UserInteraction(
+            interaction_id=f"evt-{interaction_counter:08d}",
+            user_id=user.user_id,
+            interaction_type=InteractionType.ACCOUNT_CREATION,
+            timestamp=create_ts,
+            ip_address=user.registration_ip,
+            ip_type=user.ip_type,
+            metadata={"user_agent": primary_ua, "ip_country": user.registration_country},
+        ))
+
+    # Covert porn accounts: ACCOUNT_CREATION only (use their own IP)
+    for user in users:
+        if user.user_id not in porn_ids:
+            continue
+        primary_ua = user_primary_ua.get(user.user_id, rng.choice(_BROWSER_USER_AGENTS))
+        interaction_counter += 1
+        create_ts = user.join_date
+        if create_ts < window_start:
+            create_ts = window_start
+        interactions.append(UserInteraction(
+            interaction_id=f"evt-{interaction_counter:08d}",
+            user_id=user.user_id,
+            interaction_type=InteractionType.ACCOUNT_CREATION,
+            timestamp=create_ts,
+            ip_address=user.registration_ip,
+            ip_type=user.ip_type,
+            metadata={"user_agent": primary_ua, "ip_country": user.registration_country},
+        ))
+
+    # Account farming, harassment, like inflation: ACCOUNT_CREATION from hosting cluster
+    for user in users:
+        if user.user_id not in (farming_ids | harass_ids | like_ids):
+            continue
+        primary_ua = user_primary_ua.get(user.user_id, rng.choice(_BROWSER_USER_AGENTS))
+        interaction_counter += 1
+        create_ts = user.join_date
+        if create_ts < window_start:
+            create_ts = window_start
+        ip = rng.choice(_FAKE_ACCOUNT_IP_POOL_RU)
+        interactions.append(UserInteraction(
+            interaction_id=f"evt-{interaction_counter:08d}",
+            user_id=user.user_id,
+            interaction_type=InteractionType.ACCOUNT_CREATION,
+            timestamp=create_ts,
+            ip_address=ip,
+            ip_type=IPType.HOSTING,
+            metadata={"user_agent": primary_ua, "ip_country": "RU", "ip_cluster": True},
+        ))
+
     _last_pct = [-1]
 
     def _progress(processed: int, total: int, events_count: int) -> None:
@@ -671,11 +1525,11 @@ def _generate_interactions(
 
     legit_events, interaction_counter = generate_legitimate_events(
         users, all_user_ids, window_start, now,
-        interaction_counter, rng, user_primary_ua, fake_ids,
+        interaction_counter, rng, user_primary_ua, excluded_ids,
         config=cfg,
         progress_callback=_progress,
     )
-    if len(users) > len(fake_ids):
+    if len(users) > len(excluded_ids):
         print()
     interactions.extend(legit_events)
 
@@ -815,14 +1669,45 @@ def generate_all(
     rng = random.Random(seed)
     now = datetime.now(timezone.utc) - timedelta(minutes=15)  # buffer so events stay in past during long run
 
+    n_fake, n_pharmacy, n_porn, n_farming, n_harass, n_like = _fishy_counts(config)
+
     print(f"Generating {num_users} users...")
     users, used_emails, name_map = _generate_users(rng, now, num_users, config)
     print(f"  Created {len(users)} users ({sum(1 for u in users if not u.is_active)} inactive)")
 
-    print(f"Generating {NUM_FAKE_ACCOUNTS} fake account users...")
-    fake_users, fake_name_map = _generate_fake_account_users(rng, now, used_emails, base_idx=num_users)
+    base = num_users
+    print(f"Generating {n_fake} fake account users...")
+    fake_users, fake_name_map = _generate_fake_account_users(rng, now, used_emails, base_idx=base, count=n_fake)
     users = users + fake_users
     name_map.update(fake_name_map)
+    base += n_fake
+
+    print(f"Generating {n_pharmacy} pharmacy phishing users...")
+    pharmacy_users, pharmacy_name_map = _generate_pharmacy_users(rng, now, used_emails, base_idx=base, count=n_pharmacy, config=config)
+    users = users + pharmacy_users
+    name_map.update(pharmacy_name_map)
+    base += n_pharmacy
+
+    print(f"Generating {n_porn} covert porn users...")
+    porn_users, porn_name_map = _generate_covert_porn_users(rng, now, used_emails, base_idx=base, count=n_porn, config=config)
+    users = users + porn_users
+    name_map.update(porn_name_map)
+    base += n_porn
+
+    print(f"Generating {n_farming} account farming users...")
+    farming_users, farming_name_map = _generate_account_farming_users(rng, now, used_emails, base_idx=base, count=n_farming)
+    users = users + farming_users
+    name_map.update(farming_name_map)
+    base += n_farming
+
+    print(f"Generating {n_harass} harassment + {n_like} like inflation users...")
+    harass_users, harass_name_map = _generate_harassment_users(rng, now, used_emails, base_idx=base, count=n_harass)
+    users = users + harass_users
+    name_map.update(harass_name_map)
+    base += n_harass
+    like_users, like_name_map = _generate_like_inflation_users(rng, now, used_emails, base_idx=base, count=n_like)
+    users = users + like_users
+    name_map.update(like_name_map)
     print(f"  Total users: {len(users)}")
 
     print("Generating profiles (Zipf connections)...")
