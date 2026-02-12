@@ -35,6 +35,16 @@ app = Flask(__name__, static_folder=str(_STATIC_DIR))
 _flagged_cache: tuple[float, dict] | None = None
 
 
+@app.after_request
+def add_cache_headers(response):
+    """Prevent browser caching of API responses."""
+    if request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
+
 def _load_flagged_data() -> dict | None:
     """Load ATO detection results from JSON. Cached until file changes."""
     global _flagged_cache
@@ -221,6 +231,27 @@ def model_status():
     trained = _MODEL_PATH.exists()
     mtime = _MODEL_PATH.stat().st_mtime if trained else None
     return jsonify({"trained": trained, "mtime": mtime})
+
+
+@app.route("/api/clear-model", methods=["POST"])
+def clear_model():
+    """Delete the trained model and risk scores."""
+    global _flagged_cache
+    try:
+        cleared = False
+        if _MODEL_PATH.exists():
+            _MODEL_PATH.unlink()
+            cleared = True
+        if _FLAGGED_PATH.exists():
+            _FLAGGED_PATH.unlink()
+            cleared = True
+        # Clear the cache immediately
+        _flagged_cache = None
+        if cleared:
+            return jsonify({"success": True, "message": "Model and risk scores cleared"})
+        return jsonify({"success": True, "message": "No model to clear"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/run-detection", methods=["POST"])

@@ -651,6 +651,7 @@
     <span class="model-status untrained" id="modelStatus"><span class="dot"></span><span id="modelStatusText">No model</span></span>
     <button type="button" class="btn-run-train" id="runTrainBtn">Train</button>
     <button type="button" class="btn-run-detection" id="runDetectionBtn">Run detection</button>
+    <button type="button" class="btn-run-train" id="clearModelBtn" style="background: var(--red); display:none">Clear Model</button>
     <span id="statsText"></span>
     <span class="metrics-bar" id="metricsBar" style="display:none"></span>
   </div>
@@ -716,15 +717,20 @@ async function refreshModelStatus() {
     const data = await api('/api/model-status');
     const el = document.getElementById('modelStatus');
     const txt = document.getElementById('modelStatusText');
+    const clearBtn = document.getElementById('clearModelBtn');
+    const metricsBar = document.getElementById('metricsBar');
     if (data.trained) {
       el.classList.remove('untrained');
       el.classList.add('trained');
       const d = new Date(data.mtime * 1000);
       txt.textContent = 'Model trained ' + d.toLocaleString();
+      if (clearBtn) clearBtn.style.display = 'inline-block';
     } else {
       el.classList.remove('trained');
       el.classList.add('untrained');
       txt.textContent = 'No model';
+      if (clearBtn) clearBtn.style.display = 'none';
+      if (metricsBar) metricsBar.style.display = 'none';
     }
   } catch (_) { /* ignore */ }
 }
@@ -899,6 +905,11 @@ async function loadProfile(userId) {
     }
   }
 
+  let labelBadge = '';
+  if (u.generation_pattern && u.generation_pattern !== 'clean') {
+    labelBadge = `<div style="margin-top:8px"><span class="badge badge-fraud">Label: ${esc(u.generation_pattern)}</span></div>`;
+  }
+
   let html = '<div class="profile-container">';
 
   // ---- Left column: profile card + details ----
@@ -910,6 +921,7 @@ async function loadProfile(userId) {
     <h2>${esc(p.display_name || userId)}</h2>
     <div class="headline">${esc(p.headline || '')}</div>
     ${atoBadge}
+    ${labelBadge}
     ${p.summary ? `<div class="summary">${esc(p.summary)}</div>` : ''}
   </div>`;
 
@@ -1223,6 +1235,34 @@ document.getElementById('runDetectionBtn').addEventListener('click', async () =>
   } finally {
     btn.disabled = false;
     btn.textContent = 'Run detection';
+  }
+});
+
+document.getElementById('clearModelBtn').addEventListener('click', async () => {
+  if (!confirm('Are you sure you want to clear the trained model and all risk scores?')) {
+    return;
+  }
+  const btn = document.getElementById('clearModelBtn');
+  btn.disabled = true;
+  btn.textContent = 'Clearing...';
+  try {
+    await apiPost('/api/clear-model');
+    // Clear metrics bar immediately
+    const metricsBar = document.getElementById('metricsBar');
+    if (metricsBar) metricsBar.style.display = 'none';
+    // Refresh everything
+    await refreshModelStatus();
+    await refreshDetectionMetrics();
+    if (currentView === 'list') {
+      await loadUserList(currentPage, currentQuery);
+    } else if (currentUserId) {
+      await loadProfile(currentUserId);
+    }
+  } catch (err) {
+    alert('Failed to clear model: ' + (err.message || 'Unknown error'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Clear Model';
   }
 });
 
