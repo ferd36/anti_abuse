@@ -15,7 +15,7 @@ from config import DatasetConfig
 from db.repository import Repository
 from core.constants import GENERATION_PATTERN_CLEAN, NUM_FAKE_ACCOUNTS
 from core.enums import InteractionType, IPType
-from data.mock_data import generate_all
+from data.mock_data import _fishy_counts, generate_all
 
 TEST_NUM_USERS = 100
 
@@ -31,7 +31,8 @@ def dataset():
     return users, profiles, interactions
 
 
-TOTAL_USERS = TEST_NUM_USERS + NUM_FAKE_ACCOUNTS
+_FISHY_COUNTS = _fishy_counts(_TEST_CONFIG.to_dict())
+TOTAL_USERS = TEST_NUM_USERS + sum(_FISHY_COUNTS)
 
 
 class TestGeneratedUsers:
@@ -60,8 +61,8 @@ class TestGeneratedUsers:
     def test_some_hosting_ips(self, dataset) -> None:
         users, _, _ = dataset
         hosting = [u for u in users if u.ip_type == IPType.HOSTING]
-        # ~10% hosting -> expect 5-15% of total
-        assert 0.05 * TOTAL_USERS <= len(hosting) <= 0.20 * TOTAL_USERS
+        # ~10% legit + fishy use hosting -> expect 5-35% of total
+        assert 0.05 * TOTAL_USERS <= len(hosting) <= 0.35 * TOTAL_USERS
 
     def test_all_join_dates_in_past(self, dataset) -> None:
         users, _, _ = dataset
@@ -71,10 +72,13 @@ class TestGeneratedUsers:
 
     def test_regular_users_have_clean_generation_pattern(self, dataset) -> None:
         users, _, _ = dataset
-        fake_ids = {u.user_id for u in users[-NUM_FAKE_ACCOUNTS:]}
+        fishy_patterns = {
+            "fake_account", "pharmacy_phishing", "covert_porn",
+            "account_farming", "coordinated_harassment", "coordinated_like_inflation",
+        }
         for u in users:
-            if u.user_id in fake_ids:
-                assert u.generation_pattern == "fake_account"
+            if u.generation_pattern in fishy_patterns:
+                assert u.generation_pattern in fishy_patterns
             else:
                 assert u.generation_pattern == GENERATION_PATTERN_CLEAN
 

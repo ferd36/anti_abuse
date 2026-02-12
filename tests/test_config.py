@@ -40,9 +40,12 @@ def test_config_to_dict_has_nested_structure() -> None:
 
 
 def test_to_dict_returns_all_sections() -> None:
-    """to_dict() includes all 8 top-level sections."""
+    """to_dict() includes all 9 top-level sections."""
     d = DATASET_CONFIG.to_dict()
-    assert set(d) == {"users", "connections", "profiles", "user_agents", "email", "usage_patterns", "common", "fraud"}
+    assert set(d) == {
+        "users", "connections", "profiles", "user_agents", "email",
+        "usage_patterns", "common", "fishy_accounts", "fraud",
+    }
 
 
 def test_config_getitem() -> None:

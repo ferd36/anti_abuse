@@ -25,7 +25,10 @@ from data.fraud._common import (
     pick_attacker_country as _pick_attacker_country,
     pick_hosting_ip as _pick_hosting_ip,
 )
+from data.fraud.account_farming import account_farming as _account_farming
 from data.fraud.connection_harvester import connection_harvester as _connection_harvester
+from data.fraud.coordinated_harassment import coordinated_harassment as _coordinated_harassment
+from data.fraud.coordinated_like_inflation import coordinated_like_inflation as _coordinated_like_inflation
 from data.fraud.credential_stuffer import credential_stuffer as _credential_stuffer
 from data.fraud.credential_tester import credential_tester as _credential_tester
 from data.fraud.country_hopper import country_hopper as _country_hopper
@@ -725,3 +728,111 @@ class TestGenerateMaliciousEvents:
                 "connection_harvester", "sleeper_agent", "fake_account",
                 "profile_defacement", "executive_hunter",
             }
+
+    def test_with_fishy_accounts_adds_account_farming_harassment_like(
+        self, all_user_ids: list[str], user_countries: dict[str, str]
+    ) -> None:
+        """Passing account_farming, harassment, like_inflation IDs produces those patterns."""
+        farming_ids = ["u-0010", "u-0011"]
+        harass_ids = ["u-0020", "u-0021"]
+        like_ids = ["u-0030", "u-0031"]
+        events, victim_to_pattern = generate_malicious_events(
+            all_user_ids, user_countries,
+            account_farming_user_ids=[u for u in farming_ids if u in all_user_ids],
+            harassment_user_ids=[u for u in harass_ids if u in all_user_ids],
+            like_inflation_user_ids=[u for u in like_ids if u in all_user_ids],
+            seed=7, fraud_pct=10,
+        )
+        # Should have events from account_farming, coordinated_harassment, coordinated_like_inflation
+        patterns = set(victim_to_pattern.values())
+        assert "account_farming" in patterns or any(
+            e.metadata.get("attack_pattern") == "account_farming" for e in events
+        )
+        assert "coordinated_harassment" in patterns or any(
+            e.metadata.get("attack_pattern") == "coordinated_harassment" for e in events
+        )
+        assert "coordinated_like_inflation" in patterns or any(
+            e.metadata.get("attack_pattern") == "coordinated_like_inflation" for e in events
+        )
+
+
+class TestAccountFarming:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        farming_ids = ["u-0010", "u-0011"]
+        events, counter = _account_farming(
+            farming_ids, all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.CHANGE_PASSWORD in types
+        assert InteractionType.CHANGE_PROFILE in types
+        assert InteractionType.CHANGE_NAME in types
+
+    def test_uses_residential_ip(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _account_farming(
+            ["u-0010"], all_user_ids, base_time, 0, rng,
+        )
+        for e in events:
+            assert e.ip_type == IPType.RESIDENTIAL
+
+
+class TestCoordinatedHarassment:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        harasser_ids = ["u-0020", "u-0021"]
+        targets = [uid for uid in all_user_ids if uid not in harasser_ids][:3]
+        events, counter = _coordinated_harassment(
+            harasser_ids, targets, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.MESSAGE_USER in types
+
+    def test_all_harassers_target_same_users(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        harasser_ids = ["u-0020", "u-0021"]
+        targets = [uid for uid in all_user_ids if uid not in harasser_ids][:2]
+        events, _ = _coordinated_harassment(
+            harasser_ids, targets, base_time, 0, rng,
+        )
+        msg_events = [e for e in events if e.interaction_type == InteractionType.MESSAGE_USER]
+        assert len(msg_events) >= len(harasser_ids) * len(targets)
+
+
+class TestCoordinatedLikeInflation:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        liker_ids = ["u-0030", "u-0031"]
+        target = next(uid for uid in all_user_ids if uid not in liker_ids)
+        events, counter = _coordinated_like_inflation(
+            liker_ids, target, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.LIKE in types
+
+    def test_all_likers_target_same_user(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        liker_ids = ["u-0030", "u-0031"]
+        target = next(uid for uid in all_user_ids if uid not in liker_ids)
+        events, _ = _coordinated_like_inflation(
+            liker_ids, target, base_time, 0, rng,
+        )
+        like_events = [e for e in events if e.interaction_type == InteractionType.LIKE]
+        assert len(like_events) == len(liker_ids)
+        for e in like_events:
+            assert e.target_user_id == target
