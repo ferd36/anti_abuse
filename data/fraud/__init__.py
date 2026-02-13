@@ -141,19 +141,32 @@ _FRAUD_PATTERN_ORDER = [
 ]
 
 
+N_PATTERNS = len(_FRAUD_PATTERN_ORDER)
+
+
 def _distribute_victims(num_selected: int, config: dict | None = None) -> list[int]:
-    """Allocate num_selected across 17 patterns proportionally to weights from config."""
+    """Allocate num_selected across 17 patterns proportionally to weights from config.
+    Ensures each pattern gets at least 1 victim when num_selected >= N_PATTERNS."""
     default_weights = DATASET_CONFIG.fraud.get("pattern_weights", {})
     weights_dict = get_cfg(config, "fraud", "pattern_weights", default=default_weights) or default_weights
     weights = [weights_dict.get(p, 0) for p in _FRAUD_PATTERN_ORDER]
     total = sum(weights)
     if num_selected <= 0 or total <= 0:
-        return [0] * len(_FRAUD_PATTERN_ORDER)
+        return [0] * N_PATTERNS
+    if num_selected >= N_PATTERNS:
+        allocated = [1] * N_PATTERNS
+        remainder = num_selected - N_PATTERNS
+        if remainder > 0 and total > 0:
+            extra = [int(remainder * w / total) for w in weights]
+            rem_extra = remainder - sum(extra)
+            for i in range(rem_extra):
+                extra[i % N_PATTERNS] += 1
+            allocated = [allocated[i] + extra[i] for i in range(N_PATTERNS)]
+        return allocated
     allocated = [int(num_selected * w / total) for w in weights]
     remainder = int(num_selected - sum(allocated))
-    n = len(allocated)
     for i in range(remainder):
-        allocated[i % n] += 1
+        allocated[i % N_PATTERNS] += 1
     return allocated
 
 
@@ -207,7 +220,7 @@ def generate_malicious_events(
     all_events: list[UserInteraction] = []
 
     num_selected = max(1, int(len(all_user_ids) * fraud_pct / 100))
-    counts = _distribute_victims(num_selected, config)
+    num_selected = max(num_selected, N_PATTERNS)
 
     # Exclude fishy accounts from victim pool (they get their own attack flows)
     fishy_ids = set()
@@ -232,6 +245,7 @@ def generate_malicious_events(
         victim_pool = candidates
 
     selected = rng.sample(victim_pool, min(num_selected, len(victim_pool)))
+    counts = _distribute_victims(len(selected), config)
 
     victim_to_pattern: dict[str, str] = {}
     offset = 0
@@ -523,7 +537,7 @@ def generate_malicious_events(
         evts, counter = coordinated_harassment(harass_ids, harass_targets, base, counter, rng, config=config)
         all_events.extend(evts)
         num_msgs = sum(1 for e in evts if e.interaction_type == InteractionType.MESSAGE_USER)
-        output_lines.append((f"{len(harass_ids)} accounts", "Coordinated Harassment", f"{len(evts)} events ({num_msgs} messages)"))
+        output_lines.append((", ".join(harass_ids), "Coordinated Harassment", f"{len(evts)} events ({num_msgs} messages)"))
 
     # Coordinated like inflation: same target (post author)
     like_ids = [uid for uid in (like_inflation_user_ids or []) if uid in all_user_ids]
@@ -535,7 +549,7 @@ def generate_malicious_events(
             evts, counter = coordinated_like_inflation(like_ids, target, base, counter, rng, config=config)
             all_events.extend(evts)
             num_likes = sum(1 for e in evts if e.interaction_type == InteractionType.LIKE)
-            output_lines.append((f"{len(like_ids)} accounts", "Coordinated Like Inflation", f"{len(evts)} events ({num_likes} likes on {target})"))
+            output_lines.append((", ".join(like_ids), "Coordinated Like Inflation", f"{len(evts)} events ({num_likes} likes on {target})"))
 
     # Profile cloning: impersonate victims
     clone_ids = [uid for uid in (profile_cloning_user_ids or []) if uid in all_user_ids]
@@ -546,7 +560,7 @@ def generate_malicious_events(
             base = now - timedelta(days=rng.randint(2, 10), hours=rng.randint(0, 23))
             evts, counter = profile_cloning(clone_ids, victims, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(clone_ids)} accounts", "Profile Cloning", f"{len(evts)} events"))
+            output_lines.append((", ".join(clone_ids), "Profile Cloning", f"{len(evts)} events"))
 
     # Endorsement inflation
     endorse_ids = [uid for uid in (endorsement_inflation_user_ids or []) if uid in all_user_ids]
@@ -557,7 +571,7 @@ def generate_malicious_events(
             base = now - timedelta(days=rng.randint(1, 7), hours=rng.randint(0, 23))
             evts, counter = endorsement_inflation(endorse_ids, victims, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(endorse_ids)} accounts", "Endorsement Inflation", f"{len(evts)} events"))
+            output_lines.append((", ".join(endorse_ids), "Endorsement Inflation", f"{len(evts)} events"))
 
     # Recommendation fraud
     recommend_ids = [uid for uid in (recommendation_fraud_user_ids or []) if uid in all_user_ids]
@@ -568,7 +582,7 @@ def generate_malicious_events(
             base = now - timedelta(days=rng.randint(1, 5), hours=rng.randint(0, 23))
             evts, counter = recommendation_fraud(recommend_ids, victims, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(recommend_ids)} accounts", "Recommendation Fraud", f"{len(evts)} events"))
+            output_lines.append((", ".join(recommend_ids), "Recommendation Fraud", f"{len(evts)} events"))
 
     # Job posting scam
     job_ids = [uid for uid in (job_scam_user_ids or []) if uid in all_user_ids]
@@ -578,7 +592,7 @@ def generate_malicious_events(
             base = now - timedelta(days=rng.randint(2, 7), hours=rng.randint(0, 23))
             evts, counter = job_posting_scam(job_ids, targets, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(job_ids)} accounts", "Job Posting Scam", f"{len(evts)} events"))
+            output_lines.append((", ".join(job_ids), "Job Posting Scam", f"{len(evts)} events"))
 
     # Invitation spam
     invite_ids = [uid for uid in (invitation_spam_user_ids or []) if uid in all_user_ids]
@@ -588,7 +602,7 @@ def generate_malicious_events(
             base = now - timedelta(days=rng.randint(1, 5), hours=rng.randint(0, 23))
             evts, counter = invitation_spam(invite_ids, targets, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(invite_ids)} accounts", "Invitation Spam", f"{len(evts)} events"))
+            output_lines.append((", ".join(invite_ids), "Invitation Spam", f"{len(evts)} events"))
 
     # Group spam
     grp_ids = [uid for uid in (group_spam_user_ids or []) if uid in all_user_ids]
@@ -597,7 +611,7 @@ def generate_malicious_events(
         base = now - timedelta(days=rng.randint(14, 30), hours=rng.randint(0, 23))
         evts, counter = group_spam(grp_ids, groups_map, base, counter, rng, config=config)
         all_events.extend(evts)
-        output_lines.append((f"{len(grp_ids)} accounts", "Group Spam", f"{len(evts)} events"))
+        output_lines.append((", ".join(grp_ids), "Group Spam", f"{len(evts)} events"))
 
     # Ad engagement fraud (use invitation_spam or group_spam as bots to avoid CLOSE_ACCOUNT conflict)
     ad_bot_ids = invite_ids or grp_ids
@@ -608,7 +622,7 @@ def generate_malicious_events(
             bot_ids = rng.sample(available_bots, min(5, len(available_bots)))
             evts, counter = ad_engagement_fraud(available_bots, base, counter, rng, config=config)
             all_events.extend(evts)
-            output_lines.append((f"{len(available_bots)} bots", "Ad Engagement Fraud", f"{len(evts)} events"))
+            output_lines.append((", ".join(available_bots), "Ad Engagement Fraud", f"{len(evts)} events"))
 
     # Format and print aligned output
     if output_lines:

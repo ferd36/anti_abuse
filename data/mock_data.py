@@ -841,21 +841,23 @@ def _generate_users(
 def _fishy_counts(config: dict | None) -> tuple[int, ...]:
     """Return (num_fake, num_pharmacy, num_covert_porn, num_account_farming, num_harassment,
     num_like_inflation, num_profile_cloning, num_endorsement_inflation, num_recommendation_fraud,
-    num_job_scam, num_invitation_spam, num_group_spam)."""
+    num_job_scam, num_invitation_spam, num_group_spam).
+    Ensures at least 1 of each fraud-related type so every fraud pattern is seen."""
     cfg = config or {}
+    _get = lambda key, default: max(1, get_cfg(cfg, "fishy_accounts", key, default=default))
     return (
-        get_cfg(cfg, "fishy_accounts", "num_fake", default=NUM_FAKE_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_pharmacy", default=NUM_PHARMACY_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_covert_porn", default=NUM_COVERT_PORN_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_account_farming", default=NUM_ACCOUNT_FARMING_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_harassment", default=NUM_HARASSMENT_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_like_inflation", default=NUM_LIKE_INFLATION_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_profile_cloning", default=NUM_PROFILE_CLONING_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_endorsement_inflation", default=NUM_ENDORSEMENT_INFLATION_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_recommendation_fraud", default=NUM_RECOMMENDATION_FRAUD_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_job_scam", default=NUM_JOB_SCAM_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_invitation_spam", default=NUM_INVITATION_SPAM_ACCOUNTS),
-        get_cfg(cfg, "fishy_accounts", "num_group_spam", default=NUM_GROUP_SPAM_ACCOUNTS),
+        _get("num_fake", NUM_FAKE_ACCOUNTS),
+        _get("num_pharmacy", NUM_PHARMACY_ACCOUNTS),
+        _get("num_covert_porn", NUM_COVERT_PORN_ACCOUNTS),
+        _get("num_account_farming", NUM_ACCOUNT_FARMING_ACCOUNTS),
+        _get("num_harassment", NUM_HARASSMENT_ACCOUNTS),
+        _get("num_like_inflation", NUM_LIKE_INFLATION_ACCOUNTS),
+        _get("num_profile_cloning", NUM_PROFILE_CLONING_ACCOUNTS),
+        _get("num_endorsement_inflation", NUM_ENDORSEMENT_INFLATION_ACCOUNTS),
+        _get("num_recommendation_fraud", NUM_RECOMMENDATION_FRAUD_ACCOUNTS),
+        _get("num_job_scam", NUM_JOB_SCAM_ACCOUNTS),
+        _get("num_invitation_spam", NUM_INVITATION_SPAM_ACCOUNTS),
+        _get("num_group_spam", NUM_GROUP_SPAM_ACCOUNTS),
     )
 
 
