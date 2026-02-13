@@ -1,5 +1,5 @@
 """
-Domain entities for the anti-abuse ATO system.
+Domain entities for the anti-abuse system.
 
 Each entity enforces invariants in __post_init__ and pre-conditions
 on mutating methods via assertions.

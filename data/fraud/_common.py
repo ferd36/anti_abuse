@@ -116,7 +116,7 @@ def make_event(
     if "user_agent" not in meta:
         meta["user_agent"] = "Mozilla/5.0 Chrome/120"
     return UserInteraction(
-        interaction_id=f"ato-{counter:06d}",
+        interaction_id=f"fraud-{counter:06d}",
         user_id=user_id,
         interaction_type=itype,
         timestamp=ts,

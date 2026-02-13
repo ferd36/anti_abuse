@@ -122,6 +122,7 @@ def _default_config() -> dict:
             },
         },
         "fraud": {
+            "default_attacker_countries": ["RU", "CN", "NG", "UA", "RO"],
             "pattern_weights": {
                 "smash_grab": 0.073,
                 "low_slow": 0.073,
@@ -140,7 +141,6 @@ def _default_config() -> dict:
                 "romance_scam": 0.04,
                 "session_hijacking": 0.03,
                 "credential_phishing": 0.04,
-                "ad_engagement_fraud": 0.02,
             },
             "fake_account": {"change_profile_pct": 0.70, "change_name_pct": 0.60},
             "account_farming": {

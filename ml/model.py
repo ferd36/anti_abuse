@@ -1,8 +1,8 @@
 """
-PyTorch neural networks for ATO detection.
+PyTorch neural networks for fraud detection.
 
-- ATOClassifier: MLP-only model (hand-crafted features).
-- ATOCombinedClassifier: Transformer sequence encoder + MLP (hand-crafted
+- FraudClassifier: MLP-only model (hand-crafted features).
+- FraudCombinedClassifier: Transformer sequence encoder + MLP (hand-crafted
   features concatenated with transformer embedding). Trained end-to-end.
 """
 
@@ -14,9 +14,9 @@ import torch.nn as nn
 from ml.sequence_encoder import ActionSequenceEncoder
 
 
-class ATOClassifier(nn.Module):
+class FraudClassifier(nn.Module):
     """
-    Multi-layer perceptron for ATO victim classification.
+    Multi-layer perceptron for fraud victim classification.
 
     Input: normalized feature vector of shape (batch_size, n_features)
     Output: logits of shape (batch_size,) for binary classification
@@ -56,7 +56,7 @@ class ATOClassifier(nn.Module):
         return self.head(h).squeeze(-1)
 
 
-class ATOCombinedClassifier(nn.Module):
+class FraudCombinedClassifier(nn.Module):
     """
     Combined transformer + MLP model.
 
@@ -130,7 +130,7 @@ class ATOCombinedClassifier(nn.Module):
 
 
 def predict_proba(model: nn.Module, x: torch.Tensor, **kwargs) -> torch.Tensor:
-    """Return probability of class 1 (ATO victim)."""
+    """Return probability of class 1 (fraud victim)."""
     model.eval()
     with torch.no_grad():
         logits = model(x, **kwargs)

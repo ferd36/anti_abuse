@@ -24,6 +24,7 @@ def coordinated_like_inflation(
     LIKE to the same target user (post author). Coordinated artificial boosting.
     """
     cfg = config or {}
+    countries = get_cfg(cfg, "fraud", "default_attacker_countries", default=["RU", "CN", "NG", "UA", "RO"])
     cluster_max = get_cfg(cfg, "fraud", "coordinated_like_inflation", "cluster_ips_max", default=4)
     like_min = get_cfg(cfg, "fraud", "coordinated_like_inflation", "like_window_min_minutes", default=2)
     like_max = get_cfg(cfg, "fraud", "coordinated_like_inflation", "like_window_max_minutes", default=15)
@@ -33,11 +34,12 @@ def coordinated_like_inflation(
 
     # Each liker logs in from cluster IP
     for idx, lid in enumerate(liker_ids):
+        country = rng.choice(countries)
         ip = cluster_ips[idx % len(cluster_ips)]
         ts += timedelta(minutes=rng.randint(1, 15))
         login_evts, counter, ts = make_login_with_failures(
             lid, ts, ip, counter, rng, "coordinated_like_inflation",
-            extra_metadata={"ip_country": "RU", "ip_cluster": True},
+            extra_metadata={"ip_country": country, "ip_cluster": True},
         )
         events.extend(login_evts)
         ts += timedelta(minutes=rng.randint(2, 10))
@@ -45,6 +47,7 @@ def coordinated_like_inflation(
     # All likers send LIKE to the same target (coordinated, tight time window)
     like_window = timedelta(minutes=rng.randint(like_min, like_max))
     for idx, lid in enumerate(liker_ids):
+        country = rng.choice(countries)
         ip = cluster_ips[idx % len(cluster_ips)]
         offset = like_window * (idx / max(len(liker_ids) - 1, 1))
         like_ts = ts + offset
@@ -54,7 +57,7 @@ def coordinated_like_inflation(
             target_user_id=target_user_id,
             metadata={
                 "attack_pattern": "coordinated_like_inflation",
-                "ip_country": "RU",
+                "ip_country": country,
                 "ip_cluster": True,
                 "post_author": target_user_id,
             },

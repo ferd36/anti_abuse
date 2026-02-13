@@ -30,9 +30,12 @@ def _events_by_user(events: list[UserInteraction]) -> dict[str, list[UserInterac
     return by_user
 
 
+_LOGIN_TYPES = (InteractionType.LOGIN, InteractionType.SESSION_LOGIN, InteractionType.PHISHING_LOGIN)
+
+
 def _enforce_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
     """
-    Validate temporal invariants for fraud (ATO) events.
+    Validate temporal invariants for fraud events.
     Raises AssertionError on violation.
     """
     by_user = _events_by_user(events)
@@ -41,31 +44,36 @@ def _enforce_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
             continue
         first_login_idx: int | None = None
         for i, e in enumerate(user_events):
-            if e.interaction_type == InteractionType.LOGIN:
+            if e.interaction_type in _LOGIN_TYPES:
                 first_login_idx = i
                 break
-        if first_login_idx is None:
-            raise AssertionError(f"User {user_id}: fraud events must have at least one LOGIN")
-        first_login_ts = user_events[first_login_idx].timestamp
-        for i, e in enumerate(user_events):
-            if i < first_login_idx:
-                if e.interaction_type != InteractionType.LOGIN:
-                    raise AssertionError(
-                        f"User {user_id}: {e.interaction_type} at index {i} before first LOGIN"
-                    )
-            else:
-                if e.timestamp < first_login_ts:
-                    raise AssertionError(
-                        f"User {user_id}: {e.interaction_type} at {e.timestamp} before LOGIN at {first_login_ts}"
-                    )
+        if first_login_idx is not None:
+            first_login_ts = user_events[first_login_idx].timestamp
+            for i, e in enumerate(user_events):
+                if i < first_login_idx:
+                    if e.interaction_type not in (InteractionType.LOGIN, InteractionType.PHISHING_LOGIN):
+                        raise AssertionError(
+                            f"User {user_id}: {e.interaction_type} at index {i} before first login"
+                        )
+                else:
+                    if e.timestamp < first_login_ts:
+                        raise AssertionError(
+                            f"User {user_id}: {e.interaction_type} at {e.timestamp} before login at {first_login_ts}"
+                        )
+        else:
+            first = user_events[0]
+            raise AssertionError(
+                f"User {user_id}: fraud events must have LOGIN, PHISHING_LOGIN, or SESSION_LOGIN first, "
+                f"got {first.interaction_type}"
+            )
         has_login = False
         for e in user_events:
-            if e.interaction_type == InteractionType.LOGIN:
+            if e.interaction_type in _LOGIN_TYPES:
                 has_login = True
             elif e.interaction_type == InteractionType.MESSAGE_USER:
                 if not has_login:
                     raise AssertionError(
-                        f"User {user_id}: MESSAGE_USER at {e.timestamp} without preceding LOGIN"
+                        f"User {user_id}: MESSAGE_USER at {e.timestamp} without preceding login"
                     )
         if any(e.interaction_type == InteractionType.CLOSE_ACCOUNT for e in user_events):
             last = user_events[-1]

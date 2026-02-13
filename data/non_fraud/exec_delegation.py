@@ -1,6 +1,6 @@
 """
 Exec Delegation: CEO/exec creates account, then remote secretary in Philippines
-accesses it repeatedly. Looks like ATO (country mismatch, repeated logins from
+accesses it repeatedly. Looks like account takeover (country mismatch, repeated logins from
 abroad) but is a false positive — legitimate delegated access.
 """
 
@@ -63,7 +63,7 @@ def exec_delegation(
     """
     CEO/exec creates account (handled by caller). Secretary in Philippines
     logs in repeatedly, does VIEW/CONNECT/MESSAGE. Country mismatch and
-    hosting-like patterns mimic ATO but are legitimate delegated access.
+    hosting-like patterns mimic takeover but are legitimate delegated access.
     """
     events: list[UserInteraction] = []
     ph_ip = rng.choice(_PH_IPS)

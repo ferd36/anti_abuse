@@ -1,5 +1,5 @@
 """
-ML pipeline for ATO detection.
+ML pipeline for fraud detection.
 
 Orchestrates data generation (optional), feature extraction, and training
 on a configurable fraction of the user base.
@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="ATO detection ML pipeline")
+    parser = argparse.ArgumentParser(description="Fraud detection ML pipeline")
     parser.add_argument(
         "--generate",
         action="store_true",

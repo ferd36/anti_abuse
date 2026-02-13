@@ -150,9 +150,10 @@ def _distribute_victims(num_selected: int, config: dict | None = None) -> list[i
     if num_selected <= 0 or total <= 0:
         return [0] * len(_FRAUD_PATTERN_ORDER)
     allocated = [int(num_selected * w / total) for w in weights]
-    remainder = num_selected - sum(allocated)
-    for i in range(int(remainder)):
-        allocated[i] += 1
+    remainder = int(num_selected - sum(allocated))
+    n = len(allocated)
+    for i in range(remainder):
+        allocated[i % n] += 1
     return allocated
 
 

@@ -119,7 +119,7 @@ def assert_non_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
 
 def assert_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
     """
-    Validate temporal invariants for fraud (ATO) events.
+    Validate temporal invariants for fraud events.
 
     Invariants:
     1. LOGIN precedes all other activity per victim (no activity before first LOGIN).

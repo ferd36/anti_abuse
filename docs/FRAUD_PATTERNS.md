@@ -1,6 +1,6 @@
 # Fraud Types (Account Takeover Patterns)
 
-This document describes the 28 types of fraud (attack patterns) simulated in the anti-abuse ATO system. Each pattern mimics realistic attacker behaviour — the tactics, timing, and signals that appear when a criminal takes over or exploits a user account.
+This document describes the 28 types of fraud (attack patterns) simulated in the anti-abuse system. Each pattern mimics realistic attacker behaviour — the tactics, timing, and signals that appear when a criminal takes over or exploits a user account.
 
 ---
 

@@ -491,9 +491,9 @@
   .badge-success { background: var(--green-light); color: var(--green); }
   .badge-fail { background: var(--red-light); color: var(--red); }
 
-  .badge-ato-flagged { background: var(--red-light); color: var(--red); }
-  .badge-ato-medium { background: var(--orange-light); color: var(--orange); }
-  .badge-ato-low { background: var(--green-light); color: var(--green); }
+  .badge-fraud-flagged { background: var(--red-light); color: var(--red); }
+  .badge-fraud-medium { background: var(--orange-light); color: var(--orange); }
+  .badge-fraud-low { background: var(--green-light); color: var(--green); }
   .badge-fraud { background: var(--purple-light); color: var(--purple); }
 
   .filter-toggle {
@@ -701,7 +701,7 @@ function getVisibleColumns() {
     { key: 'country', label: 'Country' },
     { key: 'ip_type', label: 'IP Type' },
     { key: 'is_active', label: 'Status' },
-    { key: 'ato_prob', label: 'Risk' },
+    { key: 'fraud_prob', label: 'Risk' },
     { key: 'generation_pattern', label: 'Label' },
     { key: 'connections_count', label: 'Connections' },
     { key: 'join_date', label: 'Joined' },
@@ -836,13 +836,13 @@ async function loadUserList(page = 1, query = '', sortBy = null, sortOrder = nul
     const joined = new Date(u.join_date).toLocaleDateString();
 
     let riskBadge = '—';
-    if (u.ato_prob != null) {
-      if (u.ato_flagged) {
-        riskBadge = `<span class="badge badge-ato-flagged">High ${(u.ato_prob * 100).toFixed(0)}%</span>`;
-      } else if (u.ato_prob >= 0.3) {
-        riskBadge = `<span class="badge badge-ato-medium">${(u.ato_prob * 100).toFixed(0)}%</span>`;
+    if (u.fraud_prob != null) {
+      if (u.fraud_flagged) {
+        riskBadge = `<span class="badge badge-fraud-flagged">High ${(u.fraud_prob * 100).toFixed(0)}%</span>`;
+      } else if (u.fraud_prob >= 0.3) {
+        riskBadge = `<span class="badge badge-fraud-medium">${(u.fraud_prob * 100).toFixed(0)}%</span>`;
       } else {
-        riskBadge = `<span class="badge badge-ato-low">Low</span>`;
+        riskBadge = `<span class="badge badge-fraud-low">Low</span>`;
       }
     }
 
@@ -857,7 +857,7 @@ async function loadUserList(page = 1, query = '', sortBy = null, sortOrder = nul
       country: u.country,
       ip_type: ipBadge,
       is_active: statusBadge,
-      ato_prob: riskBadge,
+      fraud_prob: riskBadge,
       generation_pattern: labelDisplay,
       connections_count: String(u.connections_count),
       join_date: joined,
@@ -895,13 +895,13 @@ async function loadProfile(userId) {
   const initials = (p.display_name || userId).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   let atoBadge = '';
-  if (data.ato_prob != null) {
-    if (data.ato_flagged) {
-      atoBadge = `<span class="badge badge-ato-flagged" style="margin-top:8px">⚠ Risk: ${(data.ato_prob * 100).toFixed(0)}% (flagged)</span>`;
-    } else if (data.ato_prob >= 0.3) {
-      atoBadge = `<span class="badge badge-ato-medium" style="margin-top:8px">Risk: ${(data.ato_prob * 100).toFixed(0)}%</span>`;
+  if (data.fraud_prob != null) {
+    if (data.fraud_flagged) {
+      atoBadge = `<span class="badge badge-fraud-flagged" style="margin-top:8px">⚠ Risk: ${(data.fraud_prob * 100).toFixed(0)}% (flagged)</span>`;
+    } else if (data.fraud_prob >= 0.3) {
+      atoBadge = `<span class="badge badge-fraud-medium" style="margin-top:8px">Risk: ${(data.fraud_prob * 100).toFixed(0)}%</span>`;
     } else {
-      atoBadge = `<span class="badge badge-ato-low" style="margin-top:8px">Risk: Low</span>`;
+      atoBadge = `<span class="badge badge-fraud-low" style="margin-top:8px">Risk: Low</span>`;
     }
   }
 

@@ -9,19 +9,19 @@ import pytest
 pytest.importorskip("torch")
 import torch
 
-from ml.model import ATOClassifier, ATOCombinedClassifier, predict_proba
+from ml.model import FraudClassifier, FraudCombinedClassifier, predict_proba
 from ml.sequence_encoder import ActionSequenceEncoder
 
 
-class TestATOClassifier:
+class TestFraudClassifier:
     def test_forward_output_shape(self) -> None:
-        model = ATOClassifier(n_features=31, hidden_dims=(16, 8), dropout=0.1)
+        model = FraudClassifier(n_features=31, hidden_dims=(16, 8), dropout=0.1)
         x = torch.randn(4, 31)
         out = model(x)
         assert out.shape == (4,)
 
     def test_predict_proba(self) -> None:
-        model = ATOClassifier(n_features=31, hidden_dims=(16,), dropout=0.0)
+        model = FraudClassifier(n_features=31, hidden_dims=(16,), dropout=0.0)
         x = torch.randn(2, 31)
         probs = predict_proba(model, x)
         assert probs.shape == (2,)
@@ -38,9 +38,9 @@ def _make_cat_tokens(batch: int, seq_len: int) -> torch.Tensor:
     ], dim=-1)
 
 
-class TestATOCombinedClassifier:
+class TestFraudCombinedClassifier:
     def test_forward_output_shape(self) -> None:
-        model = ATOCombinedClassifier(
+        model = FraudCombinedClassifier(
             n_features=31,
             seq_embed_dim=16,
             seq_n_heads=2,

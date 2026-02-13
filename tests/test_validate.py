@@ -255,7 +255,7 @@ class TestEnforceTemporalInvariants:
                 metadata={"attack_pattern": "smash_grab"},
             ),
         ]
-        with pytest.raises(AssertionError, match="fraud events must have at least one LOGIN"):
+        with pytest.raises(AssertionError, match="fraud events must have LOGIN, PHISHING_LOGIN, or SESSION_LOGIN first"):
             enforce_temporal_invariants(events)
 
     def test_fraud_activity_before_first_login_fails(self, now: datetime) -> None:
@@ -279,7 +279,7 @@ class TestEnforceTemporalInvariants:
                 metadata={"attack_pattern": "smash_grab", "login_success": True},
             ),
         ]
-        with pytest.raises(AssertionError, match="before first LOGIN"):
+        with pytest.raises(AssertionError, match="before first login"):
             enforce_temporal_invariants(events)
 
     def test_fraud_close_account_not_last_fails(self, now: datetime) -> None:
@@ -425,7 +425,7 @@ class TestEnforceTemporalInvariants:
                 metadata={"attack_pattern": "smash_grab"},
             ),
         ]
-        with pytest.raises(AssertionError, match="before first LOGIN"):
+        with pytest.raises(AssertionError, match="before first login"):
             enforce_temporal_invariants(events)
 
     def test_non_fraud_session_without_successful_login_skipped(
@@ -477,7 +477,7 @@ class TestEnforceTemporalInvariants:
                 metadata={"attack_pattern": "smash_grab", "login_success": True},
             ),
         ]
-        with pytest.raises(AssertionError, match="before first LOGIN"):
+        with pytest.raises(AssertionError, match="before first login"):
             enforce_temporal_invariants(events)
 
     def test_non_fraud_connect_without_view_fails(self, now: datetime) -> None:

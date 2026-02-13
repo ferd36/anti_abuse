@@ -1,5 +1,5 @@
 """
-Enumerations for the anti-abuse ATO system.
+Enumerations for the anti-abuse system.
 """
 
 from enum import Enum

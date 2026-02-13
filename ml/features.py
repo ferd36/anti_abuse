@@ -1,5 +1,5 @@
 """
-Feature extraction for ATO detection.
+Feature extraction for fraud detection.
 
 Extracts behavioral, geographic, and pattern features per user
 from the anti_abuse database.
@@ -277,14 +277,14 @@ def _user_attr_features(ua: dict) -> dict:
 
 def extract_features(db_path: str | Path) -> tuple[pd.DataFrame, pd.Series]:
     """
-    Extract ATO detection features for all users.
+    Extract fraud detection features for all users.
 
     Args:
         db_path: Path to anti_abuse.db
 
     Returns:
         (X: features DataFrame, y: labels Series)
-        y = 1 for ATO victims, 0 for legitimate users.
+        y = 1 for fraud victims, 0 for legitimate users.
     """
     db_path = Path(db_path)
     conn = sqlite3.connect(db_path)
@@ -346,12 +346,12 @@ def extract_features(db_path: str | Path) -> tuple[pd.DataFrame, pd.Series]:
         lambda m: m.get("login_success") if isinstance(m.get("login_success"), bool) else None
     )
 
-    # ATO label: user has any interaction with attack_pattern or attacker_country
-    ato_flags = interactions["metadata"].apply(
+    # Fraud label: user has any interaction with attack_pattern or attacker_country
+    fraud_flags = interactions["metadata"].apply(
         lambda m: bool(m.get("attack_pattern") or m.get("attacker_country"))
     )
-    ato_user_ids = set(interactions.loc[ato_flags, "user_id"].unique())
-    labels = users_df["user_id"].isin(ato_user_ids).astype(int)
+    fraud_user_ids = set(interactions.loc[fraud_flags, "user_id"].unique())
+    labels = users_df["user_id"].isin(fraud_user_ids).astype(int)
 
     now = interactions["timestamp"].max()
     if pd.isna(now):
@@ -442,12 +442,12 @@ def extract_sequences(
         lambda m: m.get("login_success") if isinstance(m.get("login_success"), bool) else None
     )
 
-    # ATO labels
-    ato_flags = interactions["metadata"].apply(
+    # Fraud labels
+    fraud_flags = interactions["metadata"].apply(
         lambda m: bool(m.get("attack_pattern") or m.get("attacker_country"))
     )
-    ato_user_ids = set(interactions.loc[ato_flags, "user_id"].unique())
-    labels = users_df["user_id"].isin(ato_user_ids).astype(int)
+    fraud_user_ids = set(interactions.loc[fraud_flags, "user_id"].unique())
+    labels = users_df["user_id"].isin(fraud_user_ids).astype(int)
 
     # Vectorized tokenization: map string columns to integer codes
     print("  Tokenizing sequences (vectorized)...")

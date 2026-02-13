@@ -1,5 +1,5 @@
 """
-Normal (legitimate) usage patterns for the anti-abuse ATO system.
+Normal (legitimate) usage patterns for the anti-abuse system.
 
 Generates interaction events that respect temporal invariants and match
 the patterns defined in USAGE_PATTERNS.md.

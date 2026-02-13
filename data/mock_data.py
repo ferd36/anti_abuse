@@ -1,5 +1,5 @@
 """
-Mock data generator for the anti-abuse ATO system.
+Mock data generator for the anti-abuse system.
 
 Generates:
   - 100,000 users with realistic distributions.

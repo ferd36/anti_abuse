@@ -24,6 +24,7 @@ def romance_scam(
     Victim-based: victim is the target of the scam.
     """
     cfg = config or {}
+    countries = get_cfg(cfg, "fraud", "default_attacker_countries", default=["RU", "CN", "NG", "UA", "RO"])
     msg_min = get_cfg(cfg, "fraud", "romance_scam", "messages_per_victim_min", default=20)
     msg_max = get_cfg(cfg, "fraud", "romance_scam", "messages_per_victim_max", default=100)
     days_min = get_cfg(cfg, "fraud", "romance_scam", "duration_days_min", default=7)
@@ -37,7 +38,7 @@ def romance_scam(
     counter += 1
     events.append(make_event(
         counter, scammer_id, InteractionType.LOGIN, ts, ip,
-        metadata={"attack_pattern": "romance_scam", "ip_country": "RU", "login_success": True},
+        metadata={"attack_pattern": "romance_scam", "ip_country": rng.choice(countries), "login_success": True},
         ip_type=IPType.RESIDENTIAL,
     ))
     ts += timedelta(minutes=rng.randint(5, 30))
@@ -51,7 +52,7 @@ def romance_scam(
         events.append(make_event(
             counter, scammer_id, InteractionType.MESSAGE_USER, ts, ip,
             target_user_id=victim_id,
-            metadata={"attack_pattern": "romance_scam", "ip_country": "RU", "scam_phase": phase},
+            metadata={"attack_pattern": "romance_scam", "ip_country": rng.choice(countries), "scam_phase": phase},
         ))
 
     return events, counter

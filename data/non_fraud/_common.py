@@ -57,10 +57,11 @@ def pick_target(
     user_id: str,
     all_user_ids: list[str],
     exclude: set[str] | None = None,
-    rng: random.Random | None = None,
+    *,
+    rng: random.Random,
 ) -> str | None:
-    """Pick a random target user different from user_id. Returns None if no valid target."""
-    rng = rng or random.Random()
+    """Pick a random target user different from user_id. Returns None if no valid target.
+    Callers must pass rng for reproducible results."""
     exclude = exclude or set()
     candidates = [uid for uid in all_user_ids if uid != user_id and uid not in exclude]
     if not candidates:
@@ -82,7 +83,7 @@ def pick_targets(
 
 
 def add_login(
-    events: list,
+    events: list[UserInteraction],
     user_id: str,
     ts: datetime,
     ip: str,
@@ -112,7 +113,7 @@ def add_login(
 
 
 def add_view_then_connect_or_message(
-    events: list,
+    events: list[UserInteraction],
     user_id: str,
     ts: datetime,
     ip: str,

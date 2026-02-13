@@ -1,5 +1,5 @@
 """
-Tests for the malicious ATO data generator.
+Tests for the malicious fraud data generator.
 
 Covers:
   - Helper functions (_pick_attacker_country, _pick_hosting_ip, _make_event,
@@ -126,7 +126,7 @@ class TestHelpers:
 
     def test_make_event_no_target(self, now: datetime) -> None:
         evt = _make_event(1, "u-0001", InteractionType.LOGIN, now, "1.2.3.4")
-        assert evt.interaction_id == "ato-000001"
+        assert evt.interaction_id == "fraud-000001"
         assert evt.user_id == "u-0001"
         assert evt.interaction_type == InteractionType.LOGIN
         assert evt.ip_type == IPType.HOSTING
@@ -140,7 +140,7 @@ class TestHelpers:
             99, "u-0001", InteractionType.MESSAGE_USER, now, "1.2.3.4",
             target_user_id="u-0002", metadata=meta,
         )
-        assert evt.interaction_id == "ato-000099"
+        assert evt.interaction_id == "fraud-000099"
         assert evt.target_user_id == "u-0002"
         assert evt.metadata["key"] == "value"
         assert "user_agent" in evt.metadata

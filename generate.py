@@ -70,7 +70,7 @@ def main() -> None:
     repo = Repository(db_path)
 
     print("\n" + "=" * 50)
-    print(f"MALICIOUS ATO DATA (target fraud: {args.fraud_pct}%)")
+    print(f"MALICIOUS DATA (target fraud: {args.fraud_pct}%)")
     print("=" * 50)
     user_countries = {u.user_id: u.country for u in users}
     user_connections_count = {p.user_id: p.connections_count for p in profiles}
@@ -89,7 +89,7 @@ def main() -> None:
     invitation_spam_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "invitation_spam"]
     group_spam_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "group_spam"]
     user_groups_joined = {p.user_id: p.groups_joined for p in profiles}
-    ato_events, victim_to_pattern = generate_malicious_events(
+    fraud_events, victim_to_pattern = generate_malicious_events(
         user_ids, user_countries,
         user_connections_count=user_connections_count,
         user_is_active=user_is_active,
@@ -112,7 +112,7 @@ def main() -> None:
     )
 
     all_interactions = sorted(
-        interactions + ato_events,
+        interactions + fraud_events,
         key=lambda i: i.timestamp,
     )
     all_interactions = _enforce_close_account_invariant(all_interactions)

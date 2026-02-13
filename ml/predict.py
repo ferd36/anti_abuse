@@ -1,8 +1,8 @@
 """
-Run ATO prediction on the database.
+Run fraud prediction on the database.
 
 Usage:
-    python -m ml_detect_ato.predict [--db PATH] [--model-dir PATH] [--threshold FLOAT]
+    python -m ml.predict [--db PATH] [--model-dir PATH] [--threshold FLOAT]
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ import numpy as np
 import torch
 
 from ml.features import FEATURE_NAMES, extract_features, extract_sequences, MAX_SEQ_LEN
-from ml.model import ATOClassifier, ATOCombinedClassifier
+from ml.model import FraudClassifier, FraudCombinedClassifier
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Predict ATO victims")
+    parser = argparse.ArgumentParser(description="Predict fraud victims")
     parser.add_argument(
         "--db",
         type=Path,
@@ -58,7 +58,7 @@ def main() -> None:
     X_t = torch.from_numpy(X_scaled.values).float()
 
     if model_type == "combined":
-        model = ATOCombinedClassifier(
+        model = FraudCombinedClassifier(
             n_features=config["n_features"],
             seq_embed_dim=config["seq_embed_dim"],
             seq_n_heads=config["seq_n_heads"],
@@ -80,7 +80,7 @@ def main() -> None:
             logits = model(X_t, cat_tokens, time_deltas, mask)
             probs = torch.sigmoid(logits).numpy().flatten()
     else:
-        model = ATOClassifier(
+        model = FraudClassifier(
             n_features=config["n_features"],
             hidden_dims=tuple(config["hidden_dims"]),
             dropout=config["dropout"],
@@ -97,16 +97,16 @@ def main() -> None:
 
     # Top-K by probability
     sorted_results = sorted(results, key=lambda r: r[1], reverse=True)
-    print(f"\nTop-{args.top_k} predicted ATO victims (by probability):")
+    print(f"\nTop-{args.top_k} predicted fraud victims (by probability):")
     print("-" * 50)
     for i, (uid, prob, pred, actual) in enumerate(sorted_results[: args.top_k], 1):
-        label = "ATO" if actual == 1 else "legit"
+        label = "fraud" if actual == 1 else "legit"
         match = "✓" if pred == actual else "✗"
         print(f"  {i:2d}. {uid}  p={prob:.3f}  pred={pred}  actual={label}  {match}")
 
-    n_pred_ato = sum(preds)
-    n_actual_ato = int(y_true.sum())
-    print(f"\nSummary: {n_pred_ato} predicted ATO | {n_actual_ato} actual ATO victims")
+    n_pred_fraud = sum(preds)
+    n_actual_fraud = int(y_true.sum())
+    print(f"\nSummary: {n_pred_fraud} predicted fraud | {n_actual_fraud} actual fraud victims")
 
 
 if __name__ == "__main__":

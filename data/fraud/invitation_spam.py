@@ -23,6 +23,7 @@ def invitation_spam(
     Spammers log in from cluster IPs and send mass connection requests.
     """
     cfg = config or {}
+    countries = get_cfg(cfg, "fraud", "default_attacker_countries", default=["RU", "CN", "NG", "UA", "RO"])
     cluster_max = get_cfg(cfg, "fraud", "invitation_spam", "cluster_ips_max", default=4)
     req_min = get_cfg(cfg, "fraud", "invitation_spam", "requests_per_account_min", default=50)
     req_max = get_cfg(cfg, "fraud", "invitation_spam", "requests_per_account_max", default=200)
@@ -31,11 +32,12 @@ def invitation_spam(
     ts = base_time
 
     for idx, sid in enumerate(spammer_ids):
+        country = rng.choice(countries)
         ip = cluster_ips[idx % len(cluster_ips)]
         ts += timedelta(minutes=rng.randint(1, 10))
         login_evts, counter, ts = make_login_with_failures(
             sid, ts, ip, counter, rng, "invitation_spam",
-            extra_metadata={"ip_country": "RU", "ip_cluster": True},
+            extra_metadata={"ip_country": country, "ip_cluster": True},
         )
         events.extend(login_evts)
         ts += timedelta(minutes=rng.randint(1, 5))
@@ -48,7 +50,7 @@ def invitation_spam(
             events.append(make_event(
                 counter, sid, InteractionType.SEND_CONNECTION_REQUEST, ts, ip,
                 target_user_id=tid,
-                metadata={"attack_pattern": "invitation_spam", "ip_country": "RU", "ip_cluster": True},
+                metadata={"attack_pattern": "invitation_spam", "ip_country": rng.choice(countries), "ip_cluster": True},
             ))
 
     return events, counter

@@ -46,7 +46,7 @@ def add_cache_headers(response):
 
 
 def _load_flagged_data() -> dict | None:
-    """Load ATO detection results from JSON. Cached until file changes."""
+    """Load fraud detection results from JSON. Cached until file changes."""
     global _flagged_cache
     if not _FLAGGED_PATH.exists():
         _flagged_cache = None
@@ -137,8 +137,8 @@ def list_users():
         else:
             flagged_user_ids = []
 
-    # Special path for risk (ato_prob) sorting: requires flagged data
-    if sort_by == "ato_prob" and flagged_data:
+    # Special path for risk (fraud_prob) sorting: requires flagged data
+    if sort_by == "fraud_prob" and flagged_data:
         user_ids = repo.get_user_ids_matching(
             query=query,
             user_ids_filter=flagged_user_ids if flagged_user_ids is not None else None,
@@ -155,7 +155,7 @@ def list_users():
         users = repo.get_users_by_ids_ordered(page_ids)
         result = {"users": users, "total": total, "page": page, "per_page": per_page}
     else:
-        if sort_by == "ato_prob":
+        if sort_by == "fraud_prob":
             sort_by = "user_id"  # Fallback when no detection data
         result = repo.search_users(
             query=query,
@@ -170,12 +170,12 @@ def list_users():
         users_map = flagged_data.get("users", {})
         for u in result["users"]:
             d = users_map.get(u["user_id"], {})
-            u["ato_prob"] = d.get("prob")
-            u["ato_flagged"] = d.get("flagged", False)
+            u["fraud_prob"] = d.get("prob")
+            u["fraud_flagged"] = d.get("flagged", False)
     else:
         for u in result["users"]:
-            u["ato_prob"] = None
-            u["ato_flagged"] = False
+            u["fraud_prob"] = None
+            u["fraud_flagged"] = False
 
     result["flagged_count"] = (
         flagged_data.get("flagged_count") if flagged_data else None
@@ -278,7 +278,7 @@ def run_detection():
 
 @app.route("/api/flagged")
 def get_flagged():
-    """Return ATO detection results for the UI."""
+    """Return fraud detection results for the UI."""
     data = _load_flagged_data()
     if data is None:
         return jsonify({
@@ -348,13 +348,13 @@ def get_user(user_id: str):
     interactions = repo.get_interactions_by_user(user_id, limit=50)
     interaction_counts = repo.count_interactions_by_type_for_user(user_id)
 
-    ato_prob = None
-    ato_flagged = False
+    fraud_prob = None
+    fraud_flagged = False
     flagged_data = _load_flagged_data()
     if flagged_data:
         u = flagged_data.get("users", {}).get(user_id, {})
-        ato_prob = u.get("prob")
-        ato_flagged = u.get("flagged", False)
+        fraud_prob = u.get("prob")
+        fraud_flagged = u.get("flagged", False)
 
     return jsonify({
         "user": {
@@ -408,8 +408,8 @@ def get_user(user_id: str):
             }
             for i in interactions
         ],
-        "ato_prob": ato_prob,
-        "ato_flagged": ato_flagged,
+        "fraud_prob": fraud_prob,
+        "fraud_flagged": fraud_flagged,
     })
 
 

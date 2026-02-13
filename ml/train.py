@@ -1,12 +1,12 @@
 """
-Train ATO detection model.
+Train fraud detection model.
 
 Supports two modes:
   --model mlp         Traditional MLP on hand-crafted features only
   --model combined    Transformer sequence encoder + MLP (end-to-end)
 
 Usage:
-    python -m ml_detect_ato.train [--db PATH] [--train-fraction F] [--epochs N] [--model combined]
+    python -m ml.train [--db PATH] [--train-fraction F] [--epochs N] [--model combined]
     # From project root (anti_abuse/)
 """
 
@@ -33,11 +33,11 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader, TensorDataset
 
 from ml.features import FEATURE_NAMES, extract_features, extract_sequences, MAX_SEQ_LEN
-from ml.model import ATOClassifier, ATOCombinedClassifier
+from ml.model import FraudClassifier, FraudCombinedClassifier
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train ATO detection model")
+    parser = argparse.ArgumentParser(description="Train fraud detection model")
     parser.add_argument(
         "--db",
         type=Path,
@@ -85,7 +85,7 @@ def train_mlp(args: argparse.Namespace) -> None:
     n_features = X.shape[1]
     n_positive = int(y.sum())
     n_total = len(y)
-    print(f"  Users: {n_total}, ATO victims: {n_positive} ({100 * n_positive / n_total:.1f}%)")
+    print(f"  Users: {n_total}, fraud victims: {n_positive} ({100 * n_positive / n_total:.1f}%)")
 
     X_pool, X_val, y_pool, y_val = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=args.seed
@@ -99,7 +99,7 @@ def train_mlp(args: argparse.Namespace) -> None:
             stratify=y_pool,
             random_state=args.seed,
         )
-        print(f"  Train fraction: {train_fraction:.1%} -> {len(X_train)} users ({int(y_train.sum())} ATO)")
+        print(f"  Train fraction: {train_fraction:.1%} -> {len(X_train)} users ({int(y_train.sum())} fraud)")
     else:
         X_train, y_train = X_pool, y_pool
 
@@ -115,7 +115,7 @@ def train_mlp(args: argparse.Namespace) -> None:
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
 
     hidden_dims = tuple(int(x) for x in args.hidden.split(","))
-    model = ATOClassifier(n_features=n_features, hidden_dims=hidden_dims, dropout=args.dropout)
+    model = FraudClassifier(n_features=n_features, hidden_dims=hidden_dims, dropout=args.dropout)
     pos_weight = (y_train == 0).sum() / max(1, (y_train == 1).sum())
     criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight]))
 
@@ -216,7 +216,7 @@ def train_combined(args: argparse.Namespace) -> None:
     n_features = X.shape[1]
     n_positive = int(y.sum())
     n_total = len(y)
-    print(f"  Users: {n_total}, ATO victims: {n_positive} ({100 * n_positive / n_total:.1f}%)")
+    print(f"  Users: {n_total}, fraud victims: {n_positive} ({100 * n_positive / n_total:.1f}%)")
 
     print("Extracting interaction sequences for transformer...")
     cat_tokens, time_deltas, mask, y_seq = extract_sequences(args.db, max_seq_len=MAX_SEQ_LEN)
@@ -240,8 +240,8 @@ def train_combined(args: argparse.Namespace) -> None:
             stratify=y.values[idx_pool],
             random_state=args.seed,
         )
-        n_ato_train = int(y.values[idx_train].sum())
-        print(f"  Train fraction: {train_fraction:.1%} -> {len(idx_train)} users ({n_ato_train} ATO)")
+        n_fraud_train = int(y.values[idx_train].sum())
+        print(f"  Train fraction: {train_fraction:.1%} -> {len(idx_train)} users ({n_fraud_train} fraud)")
     else:
         idx_train = idx_pool
 
@@ -272,7 +272,7 @@ def train_combined(args: argparse.Namespace) -> None:
 
     # Model
     hidden_dims = tuple(int(x) for x in args.hidden.split(","))
-    model = ATOCombinedClassifier(
+    model = FraudCombinedClassifier(
         n_features=n_features,
         seq_embed_dim=args.seq_embed_dim,
         seq_n_heads=args.seq_n_heads,

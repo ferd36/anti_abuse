@@ -1,6 +1,6 @@
-# Anti-Abuse ATO Detection
+# Anti-Abuse Fraud Detection
 
-Account Takeover (ATO) detection system with mock data generation, ML models, and a web UI for exploring users and risk scores.
+Account takeover and fraud detection system with mock data generation, ML models, and a web UI for exploring users and risk scores.
 
 ## Setup
 

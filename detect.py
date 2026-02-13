@@ -19,11 +19,11 @@ import numpy as np
 import torch
 
 from ml.features import extract_features, extract_sequences, MAX_SEQ_LEN
-from ml.model import ATOClassifier, ATOCombinedClassifier
+from ml.model import FraudClassifier, FraudCombinedClassifier
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run ATO detection on all users")
+    parser = argparse.ArgumentParser(description="Run fraud detection on all users")
     parser.add_argument(
         "--db",
         type=Path,
@@ -70,7 +70,7 @@ def main() -> int:
     X_t = torch.from_numpy(X_scaled.values).float()
 
     if model_type == "combined":
-        model = ATOCombinedClassifier(
+        model = FraudCombinedClassifier(
             n_features=config["n_features"],
             seq_embed_dim=config["seq_embed_dim"],
             seq_n_heads=config["seq_n_heads"],
@@ -93,7 +93,7 @@ def main() -> int:
             logits = model(X_t, cat_tokens, time_deltas, mask)
             probs = torch.sigmoid(logits).numpy().flatten()
     else:
-        model = ATOClassifier(
+        model = FraudClassifier(
             n_features=config["n_features"],
             hidden_dims=tuple(config["hidden_dims"]),
             dropout=config["dropout"],

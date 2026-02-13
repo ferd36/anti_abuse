@@ -1,5 +1,5 @@
 """
-System-wide constants for the anti-abuse ATO system.
+System-wide constants for the anti-abuse system.
 
 Domain validation, mock data config, and shared literals.
 """

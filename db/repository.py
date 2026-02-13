@@ -1,5 +1,5 @@
 """
-SQLite database layer for the anti-abuse ATO system.
+SQLite database layer for the anti-abuse system.
 
 Provides:
   - Schema creation (users, user_profiles, user_interactions tables).
@@ -272,7 +272,7 @@ class Repository:
         return {r["user_id"]: r["generation_pattern"] for r in rows}
 
     def update_user_generation_pattern(self, user_id: str, generation_pattern: str) -> None:
-        """Update the generation_pattern for a user (e.g. when marking as ATO victim)."""
+        """Update the generation_pattern for a user (e.g. when marking as fraud victim)."""
         assert isinstance(user_id, str) and len(user_id) > 0
         assert isinstance(generation_pattern, str) and len(generation_pattern) > 0
         self._conn.execute(
@@ -504,7 +504,6 @@ class Repository:
         "country": "u.country",
         "ip_type": "u.ip_type",
         "is_active": "u.is_active",
-        "ato_prob": "u.ato_prob",
         "generation_pattern": "u.generation_pattern",
         "connections_count": "p.connections_count",
         "join_date": "u.join_date",
@@ -724,7 +723,7 @@ class Repository:
         for the same user. Returns the number of rows deleted.
 
         This handles cross-dataset issues (e.g. legitimate events that
-        predate ATO close events, or vice versa).
+        predate fraud close events, or vice versa).
         """
         deleted = self._conn.execute(
             """DELETE FROM user_interactions

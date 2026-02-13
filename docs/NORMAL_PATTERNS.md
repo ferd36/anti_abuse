@@ -77,7 +77,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 5a. Career Update
+## 6. Career Update
 
 **What it is:** A user who logs in primarily to update their profile — job headline, summary, or last name (e.g. marriage). Minimal activity: 1–2 sessions of LOGIN → UPDATE_HEADLINE / UPDATE_SUMMARY / CHANGE_LAST_NAME. No browsing or messaging.
 
@@ -90,7 +90,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 5b. Dormant Account
+## 7. Dormant Account
 
 **What it is:** A user who created an account but never actively used it. Signed up, maybe logged in once to verify, then never returned. No profile views, connections, or messages.
 
@@ -103,7 +103,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 6. New User Onboarding
+## 8. New User Onboarding
 
 **What it is:** A recently joined user who is setting up their profile and building their network. Activity is concentrated in the first few days, then tapers.
 
@@ -118,7 +118,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 7. Weekly Check-in
+## 9. Weekly Check-in
 
 **What it is:** A user who logs in roughly once a week for a quick browse. Minimal activity per session.
 
@@ -132,7 +132,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 8. Content Consumer
+## 10. Content Consumer
 
 **What it is:** A user who mostly views profiles and activity feeds. Rarely sends messages or connection requests.
 
@@ -146,7 +146,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ---
 
-## 9. Exec Delegation
+## 11. Exec Delegation
 
 **What it is:** A CEO or executive creates the account, but a remote secretary in the Philippines accesses it repeatedly on their behalf. This looks like account takeover (country mismatch, repeated logins from abroad) but is a false positive — legitimate delegated access.
 
@@ -157,7 +157,7 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 - Activity spread over weeks; no DOWNLOAD_ADDRESS_BOOK; no mass spam
 - Metadata includes `delegated_access: true` for analysis
 
-**How it differs from fraud:** No address book download; no burst of spam; no rapid takeover and close. The country mismatch and repeated "foreign" logins mimic ATO but reflect normal exec-assistant workflows (common in BPO-heavy regions like the Philippines).
+**How it differs from fraud:** No address book download; no burst of spam; no rapid takeover and close. The country mismatch and repeated "foreign" logins mimic account takeover but reflect normal exec-assistant workflows (common in BPO-heavy regions like the Philippines).
 
 ---
 
