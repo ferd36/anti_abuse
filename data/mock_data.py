@@ -46,6 +46,7 @@ from core.constants import (
 )
 from core.enums import InteractionType, IPType
 from core.models import User, UserInteraction, UserProfile
+from core.validate import _is_fraud_event
 from data.config_utils import get_cfg
 from data.non_fraud import generate_legitimate_events
 
@@ -1778,6 +1779,79 @@ def _enforce_account_creation_first(
         )
 
     return cleaned
+
+
+def add_accept_events_for_connects(
+    interactions: list[UserInteraction],
+    rng: random.Random,
+    accept_rate: float = 0.6,
+) -> list[UserInteraction]:
+    """
+    Add ACCEPT_CONNECTION_REQUEST events for a subset of CONNECT/SEND requests.
+    For each (sender, target) request, target accepts with probability accept_rate.
+    Returns new list with accept events inserted (sorted by timestamp).
+    """
+    result = list(interactions)
+    counter = len(interactions) + 1
+    first_event_by_user: dict[str, datetime] = {}
+    first_non_fraud_by_user: dict[str, datetime] = {}
+    for e in interactions:
+        if e.user_id not in first_event_by_user or e.timestamp < first_event_by_user[e.user_id]:
+            first_event_by_user[e.user_id] = e.timestamp
+        if not _is_fraud_event(e):
+            if e.user_id not in first_non_fraud_by_user or e.timestamp < first_non_fraud_by_user[e.user_id]:
+                first_non_fraud_by_user[e.user_id] = e.timestamp
+
+    now = datetime.now(timezone.utc) - timedelta(seconds=1)
+    for i in interactions:
+        if i.interaction_type not in (
+            InteractionType.CONNECT_WITH_USER,
+            InteractionType.SEND_CONNECTION_REQUEST,
+        ) or i.target_user_id is None:
+            continue
+        if i.user_id == i.target_user_id:
+            continue
+        if rng.random() >= accept_rate:
+            continue
+        accepter = i.target_user_id
+        sender = i.user_id
+        accept_ts = i.timestamp + timedelta(seconds=rng.randint(60, 86400))
+        if accept_ts > now:
+            accept_ts = now
+        accepter_first = first_non_fraud_by_user.get(accepter) or first_event_by_user.get(accepter)
+        if accepter_first is not None and accept_ts <= accepter_first:
+            accept_ts = accepter_first + timedelta(seconds=rng.randint(1, 3600))
+        if accept_ts > now:
+            accept_ts = now
+        result.append(
+            UserInteraction(
+                interaction_id=f"evt-accept-{counter:08d}",
+                user_id=accepter,
+                interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+                timestamp=accept_ts,
+                ip_address="198.51.100.1",
+                ip_type=IPType.RESIDENTIAL,
+                target_user_id=sender,
+                metadata={},
+            )
+        )
+        counter += 1
+
+    result.sort(key=lambda x: x.timestamp)
+    return result
+
+
+def update_profiles_connections(
+    profiles: list[UserProfile],
+    connections_count: dict[str, int],
+) -> list[UserProfile]:
+    """Return new profiles with connections_count set from the given mapping."""
+    from dataclasses import replace
+
+    return [
+        replace(p, connections_count=connections_count.get(p.user_id, 0))
+        for p in profiles
+    ]
 
 
 def _enforce_close_account_invariant(

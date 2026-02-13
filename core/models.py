@@ -376,6 +376,7 @@ class UserInteraction:
         InteractionType.MESSAGE_USER,
         InteractionType.VIEW_USER_PAGE,
         InteractionType.CONNECT_WITH_USER,
+        InteractionType.ACCEPT_CONNECTION_REQUEST,
         InteractionType.LIKE,
         InteractionType.REACT,
         InteractionType.ENDORSE_SKILL,

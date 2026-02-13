@@ -431,7 +431,7 @@ class TestConnections:
         self, repo: Repository, sample_user: User, sample_user_2: User, now: datetime
     ) -> None:
         repo.insert_users_batch([sample_user, sample_user_2])
-        # u-0001 connected with u-0002
+        # u-0001 sent connection request to u-0002
         repo.insert_interaction(UserInteraction(
             interaction_id="evt-conn",
             user_id="u-0001",
@@ -440,6 +440,16 @@ class TestConnections:
             ip_address="1.2.3.4",
             ip_type=IPType.RESIDENTIAL,
             target_user_id="u-0002",
+        ))
+        # u-0002 accepted
+        repo.insert_interaction(UserInteraction(
+            interaction_id="evt-accept",
+            user_id="u-0002",
+            interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+            timestamp=now + timedelta(seconds=60),
+            ip_address="1.2.3.5",
+            ip_type=IPType.RESIDENTIAL,
+            target_user_id="u-0001",
         ))
         # From u-0001's perspective
         conns_1 = repo.get_connections("u-0001")
@@ -473,6 +483,15 @@ class TestConnections:
             ip_type=IPType.RESIDENTIAL,
             target_user_id="u-0001",
         ))
+        repo.insert_interaction(UserInteraction(
+            interaction_id="evt-accept",
+            user_id="u-0001",
+            interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+            timestamp=now + timedelta(seconds=60),
+            ip_address="1.2.3.4",
+            ip_type=IPType.RESIDENTIAL,
+            target_user_id="u-0002",
+        ))
         conns = repo.get_connections("u-0002")
         assert len(conns) == 1
         assert conns[0]["display_name"] == "Alice Smith"
@@ -484,7 +503,7 @@ class TestConnections:
         self, repo: Repository, sample_user: User, sample_user_2: User, now: datetime
     ) -> None:
         repo.insert_users_batch([sample_user, sample_user_2])
-        # No profile for u-0002
+        # No profile for u-0002; u-0001 sent, u-0002 accepted
         repo.insert_interaction(UserInteraction(
             interaction_id="evt-conn",
             user_id="u-0001",
@@ -493,6 +512,15 @@ class TestConnections:
             ip_address="1.2.3.4",
             ip_type=IPType.RESIDENTIAL,
             target_user_id="u-0002",
+        ))
+        repo.insert_interaction(UserInteraction(
+            interaction_id="evt-accept",
+            user_id="u-0002",
+            interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+            timestamp=now + timedelta(seconds=60),
+            ip_address="1.2.3.5",
+            ip_type=IPType.RESIDENTIAL,
+            target_user_id="u-0001",
         ))
         conns = repo.get_connections("u-0001")
         assert len(conns) == 1

@@ -13,6 +13,8 @@ from datetime import datetime
 from core.enums import InteractionType
 from core.models import User, UserInteraction, UserProfile
 
+_CONNECT_SEND_TYPES = (InteractionType.CONNECT_WITH_USER, InteractionType.SEND_CONNECTION_REQUEST)
+
 
 def _is_fraud_event(e: UserInteraction) -> bool:
     """True if event has fraud metadata (attack_pattern or attacker_country)."""
@@ -188,6 +190,66 @@ def enforce_temporal_invariants(interactions: list[UserInteraction]) -> None:
             _enforce_non_fraud_temporal_invariants(non_fraud_events)
 
 
+def compute_connections_from_interactions(
+    interactions: list[UserInteraction],
+) -> dict[str, int]:
+    """
+    Compute per-user connection counts from interactions.
+
+    A connection exists when: A sent a connection request to B and B accepted.
+    Ignores pending invitations (sent but not accepted).
+
+    Returns:
+        Mapping user_id -> connections_count (sent & accepted + received & accepted).
+    """
+    sent: set[tuple[str, str]] = set()
+    accepted: set[tuple[str, str]] = set()
+
+    for e in interactions:
+        if e.target_user_id is None:
+            continue
+        a, b = e.user_id, e.target_user_id
+        if a == b:
+            continue
+        pair = (min(a, b), max(a, b))
+        if e.interaction_type in _CONNECT_SEND_TYPES:
+            sent.add((a, b))
+        elif e.interaction_type == InteractionType.ACCEPT_CONNECTION_REQUEST:
+            accepted.add((a, b))
+
+    connections: set[tuple[str, str]] = set()
+    for (sender, target) in sent:
+        if (target, sender) in accepted:
+            connections.add((sender, target))
+
+    counts: dict[str, int] = {}
+    for a, b in connections:
+        counts[a] = counts.get(a, 0) + 1
+        counts[b] = counts.get(b, 0) + 1
+    return counts
+
+
+def validate_connections_invariant(
+    profiles: list[UserProfile],
+    interactions: list[UserInteraction],
+) -> None:
+    """
+    Enforce: profile.connections_count == computed from interactions.
+
+    connections_count must equal (sent & accepted) + (received & accepted).
+    Pending invitations are ignored.
+    Raises AssertionError on violation.
+    """
+    computed = compute_connections_from_interactions(interactions)
+    for p in profiles:
+        expected = computed.get(p.user_id, 0)
+        if p.connections_count != expected:
+            raise AssertionError(
+                f"Profile {p.user_id}: connections_count={p.connections_count} "
+                f"must equal accepted connections from interactions ({expected})"
+            )
+
+
 def validate_corpus(
     users: list[User],
     profiles: list[UserProfile],
@@ -203,6 +265,7 @@ def validate_corpus(
       - interaction_id is unique across interactions.
       - User.email is unique across users.
       - profile_created_at >= user.join_date for each profile.
+      - profile.connections_count == accepted connections from interactions.
     Raises AssertionError on violation.
     """
     user_ids = {u.user_id for u in users}
@@ -238,3 +301,5 @@ def validate_corpus(
             f"Duplicate interaction_id: {i.interaction_id!r}"
         )
         interaction_ids.add(i.interaction_id)
+
+    validate_connections_invariant(profiles, interactions)

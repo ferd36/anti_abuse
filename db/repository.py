@@ -469,17 +469,22 @@ class Repository:
 
     def get_connections(self, user_id: str) -> list[dict]:
         """
-        Return users connected to the given user (via CONNECT_WITH_USER).
-        Looks at both directions: user initiated or was the target.
+        Return users connected to the given user (sent+accepted only).
+        A connection exists when A sent a request to B and B accepted.
+        Ignores pending invitations.
         Returns list of dicts with user_id, display_name, headline, country.
         """
         assert isinstance(user_id, str) and len(user_id) > 0
         rows = self._conn.execute(
             """SELECT DISTINCT
-                   CASE WHEN i.user_id = ? THEN i.target_user_id ELSE i.user_id END AS connected_id
-               FROM user_interactions i
-               WHERE i.interaction_type = 'connect_with_user'
-                 AND (i.user_id = ? OR i.target_user_id = ?)""",
+                   CASE WHEN s.user_id = ? THEN s.target_user_id ELSE s.user_id END AS connected_id
+               FROM user_interactions s
+               JOIN user_interactions a
+                 ON a.interaction_type = 'accept_connection_request'
+                 AND a.user_id = s.target_user_id
+                 AND a.target_user_id = s.user_id
+               WHERE s.interaction_type IN ('connect_with_user', 'send_connection_request')
+                 AND (s.user_id = ? OR s.target_user_id = ?)""",
             (user_id, user_id, user_id),
         ).fetchall()
         connected_ids = [r["connected_id"] for r in rows]

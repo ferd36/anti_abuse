@@ -8,7 +8,11 @@ import pytest
 
 from core.enums import InteractionType, IPType
 from core.models import User, UserInteraction, UserProfile
-from core.validate import enforce_temporal_invariants, validate_corpus
+from core.validate import (
+    compute_connections_from_interactions,
+    enforce_temporal_invariants,
+    validate_corpus,
+)
 
 
 @pytest.fixture
@@ -56,7 +60,7 @@ def profiles(users: list[User], now: datetime) -> list[UserProfile]:
             display_name="Alice",
             headline="",
             summary="",
-            connections_count=10,
+            connections_count=0,
             profile_created_at=join1 + timedelta(minutes=5),
         ),
         UserProfile(
@@ -64,7 +68,7 @@ def profiles(users: list[User], now: datetime) -> list[UserProfile]:
             display_name="Bob",
             headline="",
             summary="",
-            connections_count=5,
+            connections_count=0,
             profile_created_at=join2 + timedelta(minutes=5),
         ),
     ]
@@ -94,6 +98,77 @@ class TestValidateCorpus:
             ),
         ]
         validate_corpus(users, profiles, interactions)
+
+    def test_valid_corpus_with_accepted_connections_passes(
+        self, users: list[User], profiles: list[UserProfile], now: datetime
+    ) -> None:
+        """validate_corpus passes when connections_count matches accepted connections."""
+        profiles_with_conn = [
+            UserProfile(
+                user_id="u-0001", display_name="Alice", headline="", summary="",
+                connections_count=1, profile_created_at=profiles[0].profile_created_at,
+            ),
+            UserProfile(
+                user_id="u-0002", display_name="Bob", headline="", summary="",
+                connections_count=1, profile_created_at=profiles[1].profile_created_at,
+            ),
+        ]
+        interactions = [
+            UserInteraction(
+                interaction_id="evt-1", user_id="u-0001",
+                interaction_type=InteractionType.LOGIN, timestamp=now,
+                ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
+                metadata={"login_success": True},
+            ),
+            UserInteraction(
+                interaction_id="evt-2", user_id="u-0001",
+                interaction_type=InteractionType.CONNECT_WITH_USER, timestamp=now,
+                ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
+                target_user_id="u-0002",
+            ),
+            UserInteraction(
+                interaction_id="evt-3", user_id="u-0002",
+                interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+                timestamp=now + timedelta(seconds=60),
+                ip_address="1.2.3.5", ip_type=IPType.RESIDENTIAL,
+                target_user_id="u-0001",
+            ),
+        ]
+        validate_corpus(users, profiles_with_conn, interactions)
+
+    def test_connections_invariant_fails_when_mismatched(
+        self, users: list[User], profiles: list[UserProfile], now: datetime
+    ) -> None:
+        """validate_corpus fails when connections_count != accepted connections."""
+        bad_profile = UserProfile(
+            user_id="u-0001", display_name="Alice", headline="", summary="",
+            connections_count=5, profile_created_at=profiles[0].profile_created_at,
+        )
+        interactions = [
+            UserInteraction(
+                interaction_id="evt-1", user_id="u-0001",
+                interaction_type=InteractionType.LOGIN, timestamp=now,
+                ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
+            ),
+        ]
+        with pytest.raises(AssertionError, match="connections_count.*must equal"):
+            validate_corpus(users, [bad_profile, profiles[1]], interactions)
+
+    def test_compute_connections_ignores_pending(
+        self, now: datetime
+    ) -> None:
+        """compute_connections_from_interactions ignores pending (unaccepted) requests."""
+        interactions = [
+            UserInteraction(
+                interaction_id="evt-1", user_id="u-0001",
+                interaction_type=InteractionType.CONNECT_WITH_USER, timestamp=now,
+                ip_address="1.2.3.4", ip_type=IPType.RESIDENTIAL,
+                target_user_id="u-0002",
+            ),
+        ]
+        computed = compute_connections_from_interactions(interactions)
+        assert computed.get("u-0001", 0) == 0
+        assert computed.get("u-0002", 0) == 0
 
     def test_profile_references_nonexistent_user_fails(
         self, users: list[User], profiles: list[UserProfile], now: datetime

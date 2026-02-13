@@ -96,6 +96,13 @@ def repo_with_data(now: datetime) -> Repository:
             target_user_id="u-0002",
         ),
         UserInteraction(
+            interaction_id="evt-0003a", user_id="u-0002",
+            interaction_type=InteractionType.ACCEPT_CONNECTION_REQUEST,
+            timestamp=now + timedelta(seconds=60),
+            ip_address="198.51.100.1", ip_type=IPType.RESIDENTIAL,
+            target_user_id="u-0001",
+        ),
+        UserInteraction(
             interaction_id="evt-0004", user_id="u-0002",
             interaction_type=InteractionType.LOGIN, timestamp=now,
             ip_address="198.51.100.1", ip_type=IPType.RESIDENTIAL,

@@ -14,6 +14,7 @@ Removes previous anti_abuse.db if it exists before creating a new one.
 from __future__ import annotations
 
 import argparse
+import random
 import time
 from pathlib import Path
 
@@ -22,10 +23,19 @@ from core.constants import NUM_USERS
 from config import DATASET_CONFIG
 
 
-from core.validate import enforce_temporal_invariants, validate_corpus
+from core.validate import (
+    compute_connections_from_interactions,
+    enforce_temporal_invariants,
+    validate_corpus,
+)
 from db.repository import Repository
 from data.fraud import generate_malicious_events
-from data.mock_data import _enforce_close_account_invariant, generate_all
+from data.mock_data import (
+    _enforce_close_account_invariant,
+    add_accept_events_for_connects,
+    generate_all,
+    update_profiles_connections,
+)
 
 
 def main() -> None:
@@ -115,7 +125,11 @@ def main() -> None:
         interactions + fraud_events,
         key=lambda i: i.timestamp,
     )
+    rng = random.Random(99)
+    all_interactions = add_accept_events_for_connects(all_interactions, rng, accept_rate=0.6)
     all_interactions = _enforce_close_account_invariant(all_interactions)
+    connections_count = compute_connections_from_interactions(all_interactions)
+    profiles = update_profiles_connections(profiles, connections_count)
     validate_corpus(users, profiles, all_interactions)
     enforce_temporal_invariants(all_interactions)
 

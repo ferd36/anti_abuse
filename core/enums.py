@@ -46,13 +46,14 @@ class InteractionType(Enum):
     DOWNLOAD_ADDRESS_BOOK = "download_address_book"
     CLOSE_ACCOUNT = "close_account"
     CONNECT_WITH_USER = "connect_with_user"
-    # Credibility / LinkedIn-specific
+    # Credibility
     ENDORSE_SKILL = "endorse_skill"           # target_user_id, skill_id in metadata
     GIVE_RECOMMENDATION = "give_recommendation"  # target_user_id
     CREATE_JOB_POSTING = "create_job_posting"   # no target; job_id in metadata
     APPLY_TO_JOB = "apply_to_job"               # job_id in metadata; target_user_id optional
     VIEW_JOB = "view_job"                       # job_id in metadata
     SEND_CONNECTION_REQUEST = "send_connection_request"  # same as CONNECT_WITH_USER semantically
+    ACCEPT_CONNECTION_REQUEST = "accept_connection_request"  # user_id accepts target_user_id's request
     JOIN_GROUP = "join_group"                   # group_id in metadata
     LEAVE_GROUP = "leave_group"                 # group_id in metadata
     POST_IN_GROUP = "post_in_group"             # group_id in metadata; optional target for reply
