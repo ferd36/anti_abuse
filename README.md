@@ -62,11 +62,13 @@ Starts the Flask UI (default port 5001).
 
 | Category | Features |
 |----------|----------|
-| **Behavioral tempo** | login_to_download_minutes, download_to_first_spam_minutes, interactions_per_hour (1h, 24h), first_login_to_close_hours |
+| **Behavioral tempo** | login_to_download_minutes, download_to_first_spam_minutes, interactions_per_hour_1h, interactions_per_hour_24h, first_login_to_close_hours |
 | **Geo/IP** | ip_country_mismatch, ip_country_changes_last_7d, ratio_hosting_ips, num_distinct_ips_last_24h |
 | **Pattern** | login_failures_before_success, spam_count_last_24h, unique_targets_messaged_last_24h, download_address_book_count |
-| **Session** | same_ip_shared_with_others (credential stuffing signal) |
-| **Derived** | hour_of_day (sin/cos), days_since_last_activity, script_user_agent |
+| **Session/Campaign** | same_ip_shared_with_others, sessions_last_7d |
+| **Profile** | connections_count, has_profile_photo, profile_completeness, endorsements_count, profile_views_received |
+| **Account Trust** | email_verified, two_factor_enabled, phone_verified, account_tier_premium, account_tier_enterprise, failed_login_streak, account_age_days |
+| **Derived** | hour_of_day_sin, hour_of_day_cos, days_since_last_activity, script_user_agent |
 
 ## Project Structure
 

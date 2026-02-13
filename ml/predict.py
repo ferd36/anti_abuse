@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from ml.features import FEATURE_NAMES, extract_features, extract_sequences, MAX_SEQ_LEN
+from ml.features import extract_features, extract_sequences, MAX_SEQ_LEN
 from ml.model import FraudClassifier, FraudCombinedClassifier
 
 

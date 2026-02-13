@@ -357,3 +357,210 @@ class TestGetInteractions:
         assert "ip_type" in interaction
         assert "target_user_id" in interaction
         assert "metadata" in interaction
+
+
+# ===================================================================
+# Model & detection endpoints
+# ===================================================================
+class TestModelEndpoints:
+    def test_model_status_no_model(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/model-status when no model exists."""
+        import api.server as server_module
+        monkeypatch.setattr(server_module, "_MODEL_PATH", tmp_path / "nonexistent.pt")
+        resp = client.get("/api/model-status")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["trained"] is False
+        assert data["mtime"] is None
+
+    def test_model_status_with_model(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/model-status when model exists."""
+        import api.server as server_module
+        model_path = tmp_path / "model.pt"
+        model_path.write_text("fake")
+        monkeypatch.setattr(server_module, "_MODEL_PATH", model_path)
+        resp = client.get("/api/model-status")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["trained"] is True
+        assert data["mtime"] is not None
+
+    def test_clear_model_nothing_to_clear(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """POST /api/clear-model when no model exists."""
+        import api.server as server_module
+        monkeypatch.setattr(server_module, "_MODEL_PATH", tmp_path / "nonexistent.pt")
+        monkeypatch.setattr(server_module, "_FLAGGED_PATH", tmp_path / "nonexistent.json")
+        resp = client.post("/api/clear-model")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["success"] is True
+        assert "No model" in data["message"]
+
+    def test_clear_model_removes_files(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """POST /api/clear-model removes model and flagged files."""
+        import api.server as server_module
+        model_path = tmp_path / "model.pt"
+        flagged_path = tmp_path / "flagged.json"
+        model_path.write_text("fake")
+        flagged_path.write_text("{}")
+        monkeypatch.setattr(server_module, "_MODEL_PATH", model_path)
+        monkeypatch.setattr(server_module, "_FLAGGED_PATH", flagged_path)
+        resp = client.post("/api/clear-model")
+        assert resp.status_code == 200
+        assert not model_path.exists()
+        assert not flagged_path.exists()
+
+    def test_get_flagged_unavailable(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/flagged when no detection results."""
+        import api.server as server_module
+        monkeypatch.setattr(server_module, "_FLAGGED_PATH", tmp_path / "nonexistent.json")
+        resp = client.get("/api/flagged")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["available"] is False
+
+    def test_get_flagged_available(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/flagged when detection results exist."""
+        import json
+        import api.server as server_module
+        flagged_path = tmp_path / "flagged.json"
+        flagged_path.write_text('{"threshold": 0.5, "total_users": 10, "flagged_count": 2, "users": {"u-1": {"prob": 0.9, "flagged": true}}}')
+        monkeypatch.setattr(server_module, "_load_flagged_data", lambda: json.loads(flagged_path.read_text()))
+        resp = client.get("/api/flagged")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["available"] is True
+        assert data["threshold"] == 0.5
+        assert data["total_users"] == 10
+        assert data["flagged_count"] == 2
+        assert "u-1" in data["users"]
+
+    def test_detection_metrics_unavailable(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/detection-metrics when no flagged data."""
+        import api.server as server_module
+        monkeypatch.setattr(server_module, "_FLAGGED_PATH", tmp_path / "nonexistent.json")
+        resp = client.get("/api/detection-metrics")
+        assert resp.status_code == 200
+        assert resp.get_json()["available"] is False
+
+    def test_detection_metrics_available(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/detection-metrics with flagged data and repo labels."""
+        import json
+        import api.server as server_module
+        flagged_path = tmp_path / "flagged.json"
+        flagged_path.write_text(
+            '{"users": {"u-0001": {"prob": 0.9, "flagged": true}, "u-0002": {"prob": 0.1, "flagged": false}}}'
+        )
+        monkeypatch.setattr(
+            server_module, "_load_flagged_data",
+            lambda: json.loads(flagged_path.read_text()),
+        )
+        resp = client.get("/api/detection-metrics")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["available"] is True
+        assert "precision" in data
+        assert "recall" in data
+        assert "f1" in data
+        assert "tp" in data
+
+    def test_list_users_fraud_prob_sort_no_data(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/users?sort_by=fraud_prob falls back when no flagged data."""
+        import api.server as server_module
+        monkeypatch.setattr(server_module, "_FLAGGED_PATH", tmp_path / "nonexistent.json")
+        resp = client.get("/api/users?sort_by=fraud_prob")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert len(data["users"]) >= 1
+
+    def test_list_users_fraud_prob_sort_with_data(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/users?sort_by=fraud_prob uses flagged data when available."""
+        import json
+        import api.server as server_module
+        flagged_path = tmp_path / "flagged.json"
+        flagged_path.write_text(
+            '{"users": {"u-0001": {"prob": 0.9, "flagged": true}, "u-0002": {"prob": 0.3, "flagged": false}, "u-0003": {"prob": 0.7, "flagged": true}}}'
+        )
+        monkeypatch.setattr(
+            server_module, "_load_flagged_data",
+            lambda: json.loads(flagged_path.read_text()),
+        )
+        resp = client.get("/api/users?sort_by=fraud_prob&sort_order=desc")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert len(data["users"]) >= 1
+        probs = [u.get("fraud_prob") for u in data["users"] if u.get("fraud_prob") is not None]
+        if len(probs) >= 2:
+            assert probs == sorted(probs, reverse=True)
+
+    def test_list_users_flagged_only(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """GET /api/users?flagged_only=1 filters to flagged users."""
+        import json
+        import api.server as server_module
+        flagged_path = tmp_path / "flagged.json"
+        flagged_path.write_text(
+            '{"users": {"u-0001": {"prob": 0.9, "flagged": true}, "u-0002": {"prob": 0.1, "flagged": false}}}'
+        )
+        monkeypatch.setattr(
+            server_module, "_load_flagged_data",
+            lambda: json.loads(flagged_path.read_text()),
+        )
+        resp = client.get("/api/users?flagged_only=1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["total"] == 1
+        assert data["users"][0]["user_id"] == "u-0001"
+
+    def test_run_train_streams(self, client: FlaskClient, monkeypatch) -> None:
+        """POST /api/run-train streams SSE events."""
+        from unittest.mock import MagicMock, patch
+        import api.server as server_module
+
+        def fake_stream():
+            yield "data: {\"epoch\":1,\"loss\":0.5}\n\n"
+            yield "data: {\"done\":true}\n\n"
+
+        with patch.object(server_module, "_stream_train_loss", side_effect=fake_stream):
+            resp = client.post("/api/run-train")
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers.get("Content-Type", "")
+        assert b"epoch" in resp.data or b"done" in resp.data
+
+    def test_run_train_real_stream(self, client: FlaskClient, tmp_path, monkeypatch) -> None:
+        """POST /api/run-train with real _stream_train_loss (mocked subprocess)."""
+        from unittest.mock import MagicMock, patch
+        import api.server as server_module
+
+        mock_proc = MagicMock()
+        mock_proc.stdout = iter(['{"epoch":1,"loss":0.5}\n', '{"done":true}\n'])
+        mock_proc.returncode = 0
+        mock_proc.wait = MagicMock(return_value=None)
+
+        with patch("subprocess.Popen", return_value=mock_proc):
+            resp = client.post("/api/run-train")
+        assert resp.status_code == 200
+        assert b"epoch" in resp.data or b"done" in resp.data
+
+    def test_run_detection_success(self, client: FlaskClient, monkeypatch) -> None:
+        """POST /api/run-detection returns success when detect succeeds."""
+        from unittest.mock import patch
+        import api.server as server_module
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = type("R", (), {"returncode": 0, "stdout": "Done", "stderr": ""})()
+            resp = client.post("/api/run-detection")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["success"] is True
+
+    def test_run_detection_failure(self, client: FlaskClient, monkeypatch) -> None:
+        """POST /api/run-detection returns 500 when detect fails."""
+        from unittest.mock import patch
+        import api.server as server_module
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = type("R", (), {"returncode": 1, "stdout": "", "stderr": "Error"})()
+            resp = client.post("/api/run-detection")
+        assert resp.status_code == 500
+        data = resp.get_json()
+        assert data["success"] is False

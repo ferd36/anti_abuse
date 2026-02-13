@@ -555,3 +555,115 @@ class TestEnforceTemporalInvariants:
         with pytest.raises(AssertionError, match="before VIEW|without preceding VIEW"):
             enforce_temporal_invariants(events)
 
+    def test_fraud_post_in_group_without_join_fails(self, now: datetime) -> None:
+        """POST_IN_GROUP for group without preceding JOIN_GROUP raises."""
+        events = [
+            UserInteraction(
+                interaction_id="evt-1",
+                user_id="u-0001",
+                interaction_type=InteractionType.LOGIN,
+                timestamp=now,
+                ip_address="1.2.3.4",
+                ip_type=IPType.HOSTING,
+                metadata={"attack_pattern": "group_spam", "login_success": True},
+            ),
+            UserInteraction(
+                interaction_id="evt-2",
+                user_id="u-0001",
+                interaction_type=InteractionType.POST_IN_GROUP,
+                timestamp=now,
+                ip_address="1.2.3.4",
+                ip_type=IPType.HOSTING,
+                metadata={"attack_pattern": "group_spam", "group_id": "g-1"},
+            ),
+        ]
+        with pytest.raises(AssertionError, match="POST_IN_GROUP.*without preceding JOIN_GROUP"):
+            enforce_temporal_invariants(events)
+
+    def test_non_fraud_session_login_fails(self, now: datetime) -> None:
+        """Normal users must not have SESSION_LOGIN."""
+        events = [
+            UserInteraction(
+                interaction_id="evt-1",
+                user_id="u-0001",
+                interaction_type=InteractionType.ACCOUNT_CREATION,
+                timestamp=now - timedelta(hours=1),
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+            UserInteraction(
+                interaction_id="evt-2",
+                user_id="u-0001",
+                interaction_type=InteractionType.SESSION_LOGIN,
+                timestamp=now,
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+        ]
+        with pytest.raises(AssertionError, match="SESSION_LOGIN"):
+            enforce_temporal_invariants(events)
+
+    def test_non_fraud_phishing_login_fails(self, now: datetime) -> None:
+        """Normal users must not have PHISHING_LOGIN."""
+        events = [
+            UserInteraction(
+                interaction_id="evt-1",
+                user_id="u-0001",
+                interaction_type=InteractionType.ACCOUNT_CREATION,
+                timestamp=now - timedelta(hours=1),
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+            UserInteraction(
+                interaction_id="evt-2",
+                user_id="u-0001",
+                interaction_type=InteractionType.PHISHING_LOGIN,
+                timestamp=now,
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+        ]
+        with pytest.raises(AssertionError, match="PHISHING_LOGIN"):
+            enforce_temporal_invariants(events)
+
+    def test_non_fraud_close_account_not_last_fails(self, now: datetime) -> None:
+        """CLOSE_ACCOUNT must be last for non-fraud users."""
+        events = [
+            UserInteraction(
+                interaction_id="evt-1",
+                user_id="u-0001",
+                interaction_type=InteractionType.ACCOUNT_CREATION,
+                timestamp=now - timedelta(hours=2),
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+            UserInteraction(
+                interaction_id="evt-2",
+                user_id="u-0001",
+                interaction_type=InteractionType.LOGIN,
+                timestamp=now - timedelta(hours=1),
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+                metadata={"login_success": True},
+            ),
+            UserInteraction(
+                interaction_id="evt-3",
+                user_id="u-0001",
+                interaction_type=InteractionType.CLOSE_ACCOUNT,
+                timestamp=now - timedelta(minutes=30),
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+            ),
+            UserInteraction(
+                interaction_id="evt-4",
+                user_id="u-0001",
+                interaction_type=InteractionType.VIEW_USER_PAGE,
+                timestamp=now,
+                ip_address="1.2.3.4",
+                ip_type=IPType.RESIDENTIAL,
+                target_user_id="u-0002",
+            ),
+        ]
+        with pytest.raises(AssertionError, match="CLOSE_ACCOUNT must be last"):
+            enforce_temporal_invariants(events)
+

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from core.enums import InteractionType, IPType
 
 from data.config_utils import get_cfg
-from ._common import make_event, pick_hosting_ip, pick_residential_ip
+from ._common import make_event, pick_residential_ip
 
 
 def romance_scam(

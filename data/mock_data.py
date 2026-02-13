@@ -1457,7 +1457,6 @@ def _generate_profiles(
             endorsements_count = rng.randint(0, endorsements_max)
             profile_views_received = rng.randint(0, 100)
         elif is_recommend:
-            recs_max = get_cfg(cfg, "fishy_accounts", "profiles", "recommendation_fraud_recommendations_max", default=5)
             has_profile_photo = rng.random() < 0.5
             location_text = rng.choice(_LOCATIONS) if rng.random() < 0.5 else ""
             endorsements_count = 0

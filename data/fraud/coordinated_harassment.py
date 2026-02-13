@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from datetime import datetime, timedelta
 
-from core.enums import InteractionType, IPType
+from core.enums import InteractionType
 
 from data.config_utils import get_cfg
 from ._common import (

@@ -619,7 +619,6 @@ def generate_malicious_events(
         available_bots = rng.sample(ad_bot_ids, min(5, len(ad_bot_ids)))
         if available_bots:
             base = now - timedelta(days=rng.randint(2, 10), hours=rng.randint(0, 23))
-            bot_ids = rng.sample(available_bots, min(5, len(available_bots)))
             evts, counter = ad_engagement_fraud(available_bots, base, counter, rng, config=config)
             all_events.extend(evts)
             output_lines.append((", ".join(available_bots), "Ad Engagement Fraud", f"{len(evts)} events"))
@@ -653,7 +652,6 @@ def generate_malicious_events(
     msg_count = sum(1 for e in all_events if e.interaction_type == InteractionType.MESSAGE_USER)
     close_count = sum(1 for e in all_events if e.interaction_type == InteractionType.CLOSE_ACCOUNT)
 
-    patterns_used = sorted(set(victim_to_pattern.values()))
     print(f"\nSummary:")
     print(f"  Victims:         {len(victims)}")
     print(f"  Total events:    {len(all_events)}")

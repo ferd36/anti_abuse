@@ -21,3 +21,15 @@ def test_serve_main_parses_args() -> None:
             mock_app.run.assert_called_once_with(debug=True, port=5999)
     finally:
         sys.argv = original_argv
+
+
+def test_serve_main_default_port() -> None:
+    """serve.main() uses default port 5001 when --port not given."""
+    original_argv = sys.argv
+    try:
+        sys.argv = ["serve.py"]
+        with patch("serve.app") as mock_app:
+            main()
+            mock_app.run.assert_called_once_with(debug=True, port=5001)
+    finally:
+        sys.argv = original_argv

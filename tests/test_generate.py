@@ -98,3 +98,37 @@ def test_generate_main_invalid_fraud_pct() -> None:
             main()
     finally:
         sys.argv = original_argv
+
+
+def test_generate_main_invalid_users() -> None:
+    """generate.main() with --users 0 raises."""
+    original_argv = sys.argv
+    try:
+        sys.argv = ["generate.py", "--memory", "--users", "0"]
+        with pytest.raises(AssertionError, match="users"):
+            main()
+    finally:
+        sys.argv = original_argv
+
+
+def test_generate_main_disk_path_removes_existing(
+    tmp_path, capsys: pytest.CaptureFixture[str], monkeypatch
+) -> None:
+    """generate.main() with disk path removes existing DB and creates new one."""
+    import generate as gen_module
+
+    db_path = tmp_path / "anti_abuse.db"
+    db_path.write_bytes(b"existing")
+    original_argv = sys.argv
+
+    try:
+        monkeypatch.setattr(gen_module, "__file__", str(tmp_path / "generate.py"))
+        sys.argv = ["generate.py", "--users", "50"]
+        with patch("generate.generate_all", return_value=_minimal_corpus()):
+            with patch("generate.generate_malicious_events", return_value=([], {})):
+                main()
+    finally:
+        sys.argv = original_argv
+
+    out = capsys.readouterr().out
+    assert "Removed previous database" in out or "Database path" in out

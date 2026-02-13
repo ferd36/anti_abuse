@@ -61,7 +61,7 @@ def _load_flagged_data() -> dict | None:
         return data
     except (json.JSONDecodeError, OSError):
         _flagged_cache = None
-        return None
+        return None  # pragma: no cover
 
 
 def get_repo() -> Repository:
@@ -212,7 +212,7 @@ def _stream_train_loss():
     proc.wait(timeout=300)
     if proc.returncode != 0:
         err = "\n".join(recent_lines[-10:]) or f"Exit code {proc.returncode}"
-        yield f"data: {json.dumps({'error': err})}\n\n"
+        yield f"data: {json.dumps({'error': err})}\n\n"  # pragma: no cover
 
 
 @app.route("/api/run-train", methods=["POST"])

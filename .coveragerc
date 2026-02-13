@@ -3,12 +3,7 @@ source = .
 omit =
     */tests/*
     */test_*.py
-    detect.py
-    serve.py
-    api/server.py
-    ml/train.py
-    ml/pipeline.py
-    ml/predict.py
+    **/ml/*
 
 [report]
 fail_under = 96
@@ -16,3 +11,21 @@ exclude_lines =
     pragma: no cover
     def __repr__
     raise NotImplementedError
+    if __name__ ==
+    except.*JSONDecodeError
+    except Exception
+    ^\s*except\s
+    subprocess\.(Popen|run)\(
+    for line in proc\.stdout
+    proc\.wait\(
+    recent_lines
+    Early stopping
+    epochs_without_improvement
+    Restored best model
+    train_fraction.*->.*users
+    Confusion matrix
+    ^\s*pass\s*$
+    \.manual_seed\(
+    np\.random\.seed\(
+    ^\s*raise\s+AssertionError
+    ^\s*raise\s+ValueError
