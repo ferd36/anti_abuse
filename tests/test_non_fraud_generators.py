@@ -18,7 +18,7 @@ import pytest
 
 from core.enums import InteractionType, IPType
 from core.models import User
-from data.non_fraud import PATTERN_NAMES, generate_legitimate_events
+from data.non_fraud import generate_legitimate_events
 from data.non_fraud.active_job_seeker import active_job_seeker
 from data.non_fraud.career_update import career_update
 from data.non_fraud.casual_browser import casual_browser
@@ -237,7 +237,7 @@ class TestReturningUser:
     ) -> None:
         user = _make_user(join_date=now - timedelta(days=45))
         window_start = now - timedelta(days=60)
-        config = {"usage_patterns": {"returning_user": {"second_session_pct": 1.0}}}
+        config = {"normal_patterns": {"returning_user": {"second_session_pct": 1.0}}}
         events, _ = returning_user(
             user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
             config=config,
@@ -386,7 +386,7 @@ class TestCareerUpdate:
         rng: random.Random,
     ) -> None:
         config = {
-            "usage_patterns": {
+            "normal_patterns": {
                 "career_update": {
                     "update_type_headline": 1.0,
                     "update_type_summary": 0,
@@ -428,7 +428,7 @@ class TestDormantAccount:
         now: datetime,
         rng: random.Random,
     ) -> None:
-        config = {"usage_patterns": {"dormant_account": {"login_once_pct": 1.0}}}
+        config = {"normal_patterns": {"dormant_account": {"login_once_pct": 1.0}}}
         user = _make_user(join_date=now - timedelta(days=30))
         window_start = now - timedelta(days=60)
         events, _ = dormant_account(
@@ -507,7 +507,7 @@ class TestGenerateLegitimateEvents:
         rng: random.Random,
     ) -> None:
         config = {
-            "usage_patterns": {
+            "normal_patterns": {
                 "exec_delegation_pct": 1.0,
                 "returning_user_pct": 0,
                 "career_update_pct": 0,
@@ -595,13 +595,3 @@ class TestTemporalInvariants:
             if len(events) > 0:
                 assert_non_fraud_temporal_invariants(events)
 
-
-class TestPatternCoverage:
-    def test_all_pattern_names_exist(self) -> None:
-        assert len(PATTERN_NAMES) == 11
-        assert "casual_browser" in PATTERN_NAMES
-        assert "new_user_onboarding" in PATTERN_NAMES
-        assert "content_consumer" in PATTERN_NAMES
-        assert "career_update" in PATTERN_NAMES
-        assert "exec_delegation" in PATTERN_NAMES
-        assert "dormant_account" in PATTERN_NAMES

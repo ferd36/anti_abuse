@@ -52,8 +52,8 @@ def career_update(
         counter, ts = add_login(events, user.user_id, ts, ip, ip_type, country, user_agent, counter, rng, max_ts=now, config=config)
 
         # Primary update: job change (headline), profile refresh (summary), or marriage (name)
-        t1 = get_cfg(config, "usage_patterns", "career_update", "update_type_headline", default=0.55)
-        t2 = get_cfg(config, "usage_patterns", "career_update", "update_type_summary", default=0.85)
+        t1 = get_cfg(config, "normal_patterns", "career_update", "update_type_headline", default=0.55)
+        t2 = get_cfg(config, "normal_patterns", "career_update", "update_type_summary", default=0.85)
         roll = rng.random()
         if roll < t1:
             itype = InteractionType.UPDATE_HEADLINE
@@ -72,7 +72,7 @@ def career_update(
             country, user_agent, metadata=meta, max_ts=now,
         ))
 
-        second_pct = get_cfg(config, "usage_patterns", "career_update", "second_update_in_session_pct", default=0.30)
+        second_pct = get_cfg(config, "normal_patterns", "career_update", "second_update_in_session_pct", default=0.30)
         if rng.random() < second_pct:
             counter += 1
             ts += timedelta(seconds=rng.randint(20, 60))

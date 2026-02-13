@@ -50,7 +50,7 @@ def active_job_seeker(
         counter, ts = add_login(events, user.user_id, ts, ip, ip_type, country, user_agent, counter, rng, max_ts=now, config=config)
 
         # ~20% chance to update headline when changing jobs (e.g. landed new role)
-        if not did_headline_update and rng.random() < get_cfg(config, "usage_patterns", "active_job_seeker", "headline_update_pct", default=0.20):
+        if not did_headline_update and rng.random() < get_cfg(config, "normal_patterns", "active_job_seeker", "headline_update_pct", default=0.20):
             counter += 1
             ts += timedelta(seconds=rng.randint(30, 90))
             events.append(make_legit_event(

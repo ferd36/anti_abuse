@@ -33,6 +33,15 @@ def romance_scam(
     duration_days = rng.randint(days_min, days_max)
     ts = base_time
 
+    ip = pick_residential_ip(rng)
+    counter += 1
+    events.append(make_event(
+        counter, scammer_id, InteractionType.LOGIN, ts, ip,
+        metadata={"attack_pattern": "romance_scam", "ip_country": "RU", "login_success": True},
+        ip_type=IPType.RESIDENTIAL,
+    ))
+    ts += timedelta(minutes=rng.randint(5, 30))
+
     for i in range(n_msgs):
         interval_minutes = (duration_days * 24 * 60) // n_msgs
         ts += timedelta(minutes=rng.randint(max(1, interval_minutes // 2), interval_minutes))

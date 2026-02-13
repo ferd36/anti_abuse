@@ -143,8 +143,11 @@ def assert_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
             first_login_ts = user_events[first_login_idx].timestamp
             for i, e in enumerate(user_events):
                 if i < first_login_idx:
-                    # Only failed LOGINs can precede first success
-                    assert e.interaction_type == InteractionType.LOGIN, (
+                    # Only failed LOGINs or PHISHING_LOGIN (victim submits to fake page) can precede first LOGIN
+                    assert e.interaction_type in (
+                        InteractionType.LOGIN,
+                        InteractionType.PHISHING_LOGIN,
+                    ), (
                         f"User {user_id}: {e.interaction_type} at index {i} before first LOGIN"
                     )
                 else:
@@ -152,8 +155,14 @@ def assert_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
                         f"User {user_id}: {e.interaction_type} at {e.timestamp} before LOGIN at {first_login_ts}"
                     )
         else:
-            # No LOGIN - should not happen for ATO
-            assert False, f"User {user_id}: fraud events must have at least one LOGIN"
+            # No LOGIN - allow PHISHING_LOGIN (credential_phishing victim) or SESSION_LOGIN (session_hijacking)
+            first = user_events[0]
+            assert first.interaction_type in (
+                InteractionType.PHISHING_LOGIN,
+                InteractionType.SESSION_LOGIN,
+            ), (
+                f"User {user_id}: fraud events must have LOGIN, PHISHING_LOGIN, or SESSION_LOGIN first, got {first.interaction_type}"
+            )
 
         # 2. MESSAGE_USER only after LOGIN
         has_login = False

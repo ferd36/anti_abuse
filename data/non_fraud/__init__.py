@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 
 from core.enums import InteractionType
 from core.models import User, UserInteraction
+from config import DATASET_CONFIG
 from data.config_utils import get_cfg
 
 from .active_job_seeker import active_job_seeker
@@ -27,43 +28,12 @@ from .regular_networker import regular_networker
 from .returning_user import returning_user
 from .weekly_check_in import weekly_check_in
 
-PATTERN_NAMES = (
-    "casual_browser",
-    "active_job_seeker",
-    "recruiter",
-    "regular_networker",
-    "returning_user",
-    "new_user_onboarding",
-    "weekly_check_in",
-    "content_consumer",
-    "career_update",
-    "exec_delegation",
-    "dormant_account",
-)
-
 _GENERATORS = {
-    "casual_browser": casual_browser,
-    "active_job_seeker": active_job_seeker,
-    "career_update": career_update,
-    "recruiter": recruiter,
-    "regular_networker": regular_networker,
-    "returning_user": returning_user,
-    "new_user_onboarding": new_user_onboarding,
-    "weekly_check_in": weekly_check_in,
-    "content_consumer": content_consumer,
-    "exec_delegation": exec_delegation,
-    "dormant_account": dormant_account,
-}
-
-# Pattern weights for regular users who don't match special cases (new/returning)
-# Recruiters are a distinct user type and always get the recruiter pattern
-# Weights are proportions in [0, 1]
-_DEFAULT_PATTERN_WEIGHTS = {
-    "casual_browser": 0.26,
-    "active_job_seeker": 0.11,
-    "regular_networker": 0.26,
-    "weekly_check_in": 0.16,
-    "content_consumer": 0.21,
+    fn.__name__: fn for fn in (
+        casual_browser, active_job_seeker, recruiter, regular_networker,
+        returning_user, new_user_onboarding, weekly_check_in, content_consumer,
+        career_update, exec_delegation, dormant_account,
+    )
 }
 
 
@@ -99,12 +69,13 @@ def generate_legitimate_events(
     total = len(legit_users)
     processed = 0
 
-    pattern_weights = get_cfg(cfg, "usage_patterns", "pattern_weights", default=_DEFAULT_PATTERN_WEIGHTS) or _DEFAULT_PATTERN_WEIGHTS
+    default_weights = DATASET_CONFIG.normal_patterns.get("pattern_weights", {})
+    pattern_weights = get_cfg(cfg, "normal_patterns", "pattern_weights", default=default_weights) or default_weights
     weights_keys = [k for k, v in pattern_weights.items() if v > 0]
     weights_vals = [pattern_weights[k] for k in weights_keys]
     if not weights_keys:
-        weights_keys = list(_DEFAULT_PATTERN_WEIGHTS.keys())
-        weights_vals = list(_DEFAULT_PATTERN_WEIGHTS.values())
+        weights_keys = [k for k, v in default_weights.items() if v > 0]
+        weights_vals = [default_weights[k] for k in weights_keys]
 
     for user in users:
         if user.user_id in fake_ids:
@@ -118,13 +89,13 @@ def generate_legitimate_events(
             pattern = "recruiter"
         elif days_since_join <= 7:
             pattern = "new_user_onboarding"
-        elif days_since_join >= 30 and rng.random() < get_cfg(cfg, "usage_patterns", "returning_user_pct", default=0.05):
+        elif days_since_join >= 30 and rng.random() < get_cfg(cfg, "normal_patterns", "returning_user_pct", default=0.05):
             pattern = "returning_user"
-        elif days_since_join >= 14 and rng.random() < get_cfg(cfg, "usage_patterns", "career_update_pct", default=0.03):
+        elif days_since_join >= 14 and rng.random() < get_cfg(cfg, "normal_patterns", "career_update_pct", default=0.03):
             pattern = "career_update"
-        elif user.country in ("US", "GB", "CA", "AU") and rng.random() < get_cfg(cfg, "usage_patterns", "exec_delegation_pct", default=0.02):
+        elif user.country in ("US", "GB", "CA", "AU") and rng.random() < get_cfg(cfg, "normal_patterns", "exec_delegation_pct", default=0.02):
             pattern = "exec_delegation"
-        elif rng.random() < get_cfg(cfg, "usage_patterns", "dormant_account_pct", default=0.06):
+        elif rng.random() < get_cfg(cfg, "normal_patterns", "dormant_account_pct", default=0.06):
             pattern = "dormant_account"
         else:
             pattern = rng.choices(weights_keys, weights=weights_vals, k=1)[0]
@@ -191,7 +162,4 @@ def generate_legitimate_events(
     return events, counter
 
 
-__all__ = [
-    "PATTERN_NAMES",
-    "generate_legitimate_events",
-]
+__all__ = ["generate_legitimate_events"]

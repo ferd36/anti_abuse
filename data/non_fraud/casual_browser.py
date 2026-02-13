@@ -56,7 +56,7 @@ def casual_browser(
                 counter, user.user_id, InteractionType.VIEW_USER_PAGE, ts, ip, ip_type,
                 country, user_agent, target_user_id=target, max_ts=now,
             ))
-        if targets and rng.random() < get_cfg(config, "usage_patterns", "casual_browser", "message_after_view_pct", default=0.3):
+        if targets and rng.random() < get_cfg(config, "normal_patterns", "casual_browser", "message_after_view_pct", default=0.3):
             target = targets[0]
             counter += 1
             ts += timedelta(seconds=rng.randint(30, 120))
@@ -75,7 +75,7 @@ def casual_browser(
                 },
                 max_ts=now,
             ))
-        elif targets and rng.random() < get_cfg(config, "usage_patterns", "casual_browser", "like_react_after_view_pct", default=0.4):
+        elif targets and rng.random() < get_cfg(config, "normal_patterns", "casual_browser", "like_react_after_view_pct", default=0.4):
             target = rng.choice(targets)
             counter += 1
             ts += timedelta(seconds=rng.randint(10, 60))

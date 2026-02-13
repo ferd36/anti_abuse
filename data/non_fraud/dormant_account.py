@@ -36,7 +36,7 @@ def dormant_account(
     if days_available < 1:
         return events, counter
 
-    login_once_pct = get_cfg(config, "usage_patterns", "dormant_account", "login_once_pct", default=0.70)
+    login_once_pct = get_cfg(config, "normal_patterns", "dormant_account", "login_once_pct", default=0.70)
     if rng.random() < login_once_pct:
         ts = join_date + timedelta(
             hours=rng.randint(1, 48),

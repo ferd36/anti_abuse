@@ -38,7 +38,7 @@ def _default_config() -> dict:
             "last_first": 0.92,
             "suffix_pct": 0.35,
         },
-        "usage_patterns": {
+        "normal_patterns": {
             "returning_user_pct": 0.05,
             "career_update_pct": 0.03,
             "exec_delegation_pct": 0.02,
@@ -237,7 +237,7 @@ class DatasetConfig:
     profiles: dict = field(default_factory=dict)
     user_agents: dict = field(default_factory=dict)
     email: dict = field(default_factory=dict)
-    usage_patterns: dict = field(default_factory=dict)
+    normal_patterns: dict = field(default_factory=dict)
     common: dict = field(default_factory=dict)
     fishy_accounts: dict = field(default_factory=dict)
     fraud: dict = field(default_factory=dict)
@@ -262,7 +262,7 @@ class DatasetConfig:
             "profiles": self.profiles,
             "user_agents": self.user_agents,
             "email": self.email,
-            "usage_patterns": self.usage_patterns,
+            "normal_patterns": self.normal_patterns,
             "common": self.common,
             "fishy_accounts": self.fishy_accounts,
             "fraud": self.fraud,
@@ -300,7 +300,7 @@ class DatasetConfig:
             errs.append(f"users.account_tier_free + account_tier_premium = {free + prem} > 1")
 
         for pattern, weights in [
-            ("usage_patterns.pattern_weights", self.usage_patterns.get("pattern_weights", {})),
+            ("normal_patterns.pattern_weights", self.normal_patterns.get("pattern_weights", {})),
             ("fraud.pattern_weights", self.fraud.get("pattern_weights", {})),
         ]:
             for k, w in weights.items():

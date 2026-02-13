@@ -39,7 +39,7 @@ def new_user_onboarding(
 
     counter, ts = add_login(events, user.user_id, ts, ip, ip_type, country, user_agent, counter, rng, max_ts=now, config=config)
 
-    if rng.random() < get_cfg(config, "usage_patterns", "new_user_onboarding", "profile_update_pct", default=0.5):
+    if rng.random() < get_cfg(config, "normal_patterns", "new_user_onboarding", "profile_update_pct", default=0.5):
         counter += 1
         ts += timedelta(seconds=rng.randint(30, 120))
         # New users set up headline (job title) or summary
@@ -48,7 +48,7 @@ def new_user_onboarding(
             counter, user.user_id, itype, ts, ip, ip_type,
             country, user_agent, max_ts=now,
         ))
-    if rng.random() < get_cfg(config, "usage_patterns", "new_user_onboarding", "upload_address_book_pct", default=0.4):
+    if rng.random() < get_cfg(config, "normal_patterns", "new_user_onboarding", "upload_address_book_pct", default=0.4):
         counter += 1
         ts += timedelta(seconds=rng.randint(60, 180))
         events.append(make_legit_event(
@@ -62,7 +62,7 @@ def new_user_onboarding(
     for target in targets:
         counter, ts = add_view_then_connect_or_message(
             events, user.user_id, ts, ip, ip_type, country, user_agent,
-            target, counter, rng, do_connect=True, do_message=(rng.random() < get_cfg(config, "usage_patterns", "new_user_onboarding", "message_on_connect_pct", default=0.2)),
+            target, counter, rng, do_connect=True, do_message=(rng.random() < get_cfg(config, "normal_patterns", "new_user_onboarding", "message_on_connect_pct", default=0.2)),
             max_ts=now,
         )
 

@@ -51,7 +51,7 @@ def returning_user(
             counter, user.user_id, InteractionType.VIEW_USER_PAGE, ts, ip, ip_type,
             country, user_agent, target_user_id=target, max_ts=now,
         ))
-    if rng.random() < get_cfg(config, "usage_patterns", "returning_user", "second_session_pct", default=0.4):
+    if rng.random() < get_cfg(config, "normal_patterns", "returning_user", "second_session_pct", default=0.4):
         counter += 1
         ts += timedelta(seconds=rng.randint(30, 120))
         # Life events: job change, profile refresh, or marital name change

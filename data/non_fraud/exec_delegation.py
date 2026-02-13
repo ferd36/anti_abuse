@@ -94,7 +94,7 @@ def exec_delegation(
             counter, ts = add_view_then_connect_or_message(
                 events, user.user_id, ts, ph_ip, IPType.RESIDENTIAL, "PH",
                 user_agent, target, counter, rng,
-                do_connect=True, do_message=(rng.random() < get_cfg(config, "usage_patterns", "exec_delegation", "message_on_connect_pct", default=0.15)),
+                do_connect=True, do_message=(rng.random() < get_cfg(config, "normal_patterns", "exec_delegation", "message_on_connect_pct", default=0.15)),
                 max_ts=now,
             )
 

@@ -1,5 +1,5 @@
 """
-Malicious ATO (Account Takeover) data generator.
+Malicious data generator.
 
 Victim selection is biased toward users with higher connection counts:
 attackers preferentially target high-value accounts with more contacts.
@@ -75,6 +75,7 @@ from core.models import UserInteraction
 
 _SESSION_GAP = timedelta(minutes=30)
 
+from config import DATASET_CONFIG
 from data.config_utils import get_cfg
 from ._common import (
     enforce_login_first_invariant,
@@ -110,8 +111,8 @@ from .spear_phisher import spear_phisher
 from .stealth_takeover import stealth_takeover
 
 
-def _assign_ato_session_ids(events: list[UserInteraction]) -> None:
-    """Assign session_id to ATO events in place. Must be sorted by timestamp."""
+def _assign_fraud_session_ids(events: list[UserInteraction]) -> None:
+    """Assign session_id to fraud events in place. Must be sorted by timestamp."""
     user_counter: dict[str, int] = {}
     user_last_ts: dict[str, datetime] = {}
 
@@ -136,18 +137,15 @@ _FRAUD_PATTERN_ORDER = [
     "login_storm", "stealth_takeover", "scraper_cluster", "spear_phisher",
     "credential_tester", "connection_harvester", "sleeper_agent", "profile_defacement",
     "executive_hunter",
+    "credential_phishing", "session_hijacking", "romance_scam",
 ]
-
-_DEFAULT_FRAUD_WEIGHTS = [3 / 44, 3 / 44, 3 / 44, 3 / 44, 7 / 44, 2 / 44, 2 / 44, 4 / 44, 3 / 44, 5 / 44, 2 / 44, 2 / 44, 2 / 44, 3 / 44]
 
 
 def _distribute_victims(num_selected: int, config: dict | None = None) -> list[int]:
-    """Allocate num_selected across 15 patterns proportionally to weights from config."""
-    weights_dict = get_cfg(config, "fraud", "pattern_weights", default={})
-    if weights_dict:
-        weights = [weights_dict.get(p, 0) for p in _FRAUD_PATTERN_ORDER]
-    else:
-        weights = _DEFAULT_FRAUD_WEIGHTS
+    """Allocate num_selected across 17 patterns proportionally to weights from config."""
+    default_weights = DATASET_CONFIG.fraud.get("pattern_weights", {})
+    weights_dict = get_cfg(config, "fraud", "pattern_weights", default=default_weights) or default_weights
+    weights = [weights_dict.get(p, 0) for p in _FRAUD_PATTERN_ORDER]
     total = sum(weights)
     if num_selected <= 0 or total <= 0:
         return [0] * len(_FRAUD_PATTERN_ORDER)
@@ -181,7 +179,7 @@ def generate_malicious_events(
     config: dict | None = None,
 ) -> tuple[list[UserInteraction], dict[str, str]]:
     """
-    Generate ATO attack events for victim accounts across 14 attack patterns.
+    Generate attack events for victim accounts across 17 attack patterns.
     Victim count is fraud_pct of user base.
 
     Args:
@@ -203,7 +201,7 @@ def generate_malicious_events(
         victim_to_pattern maps victim user_id -> attack pattern name (source of truth).
     """
     rng = random.Random(seed)
-    now = datetime.now(timezone.utc) - timedelta(minutes=10)
+    now = datetime.now(timezone.utc) - timedelta(days=60)
     counter = 0
     all_events: list[UserInteraction] = []
 
@@ -292,10 +290,20 @@ def generate_malicious_events(
     for vid in defacement_victims:
         victim_to_pattern[vid] = "profile_defacement"
     exec_hunter_victims = selected[offset : offset + counts[13]]
+    offset += counts[13]
     for vid in exec_hunter_victims:
         victim_to_pattern[vid] = "executive_hunter"
+    credential_phishing_victims = selected[offset : offset + counts[14]]
+    offset += counts[14]
+    for vid in credential_phishing_victims:
+        victim_to_pattern[vid] = "credential_phishing"
+    session_hijacking_victims = selected[offset : offset + counts[15]]
+    offset += counts[15]
+    for vid in session_hijacking_victims:
+        victim_to_pattern[vid] = "session_hijacking"
+    romance_scam_victims = selected[offset : offset + counts[16]]
 
-    print("Generating ATO attack patterns...")
+    print("Generating attack patterns...")
     
     # Collect output lines for aligned printing
     output_lines = []
@@ -447,6 +455,43 @@ def generate_malicious_events(
         num_messages = sum(1 for e in evts if e.interaction_type == InteractionType.MESSAGE_USER)
         output_lines.append((ids, "Executive Hunter", f"{len(evts)} events ({num_messages} targeted messages)"))
 
+    for vid in credential_phishing_victims:
+        base = now - timedelta(days=rng.randint(3, 20), hours=rng.randint(0, 23))
+        evts, counter = credential_phishing(
+            vid, user_countries.get(vid, "US"), base, counter, rng,
+            config=config,
+        )
+        all_events.extend(evts)
+        output_lines.append((vid, "Credential Phishing", f"{len(evts)} events"))
+
+    for vid in session_hijacking_victims:
+        base = now - timedelta(days=rng.randint(3, 18), hours=rng.randint(0, 23))
+        evts, counter = session_hijacking(
+            vid, user_countries.get(vid, "US"), all_user_ids, base, counter, rng,
+            config=config,
+        )
+        all_events.extend(evts)
+        num_views = sum(1 for e in evts if e.interaction_type == InteractionType.VIEW_USER_PAGE)
+        output_lines.append((vid, "Session Hijacking", f"{len(evts)} events ({num_views} profile views)"))
+
+    scammer_candidates = [u for u in all_user_ids if u not in fishy_ids and u not in selected]
+    for vid in romance_scam_victims:
+        if not scammer_candidates:
+            scammer_candidates = [u for u in all_user_ids if u != vid]
+        if not scammer_candidates:
+            continue
+        scammer_id = rng.choice(scammer_candidates)
+        # Romance scam spans 7-60 days; base must be far enough back so events don't exceed now
+        base = now - timedelta(days=rng.randint(65, 90), hours=rng.randint(0, 23))
+        evts, counter = romance_scam(
+            vid, scammer_id, base, counter, rng,
+            config=config,
+        )
+        all_events.extend(evts)
+        victim_to_pattern[scammer_id] = "romance_scam"  # scammer is user_id in events
+        num_msgs = sum(1 for e in evts if e.interaction_type == InteractionType.MESSAGE_USER)
+        output_lines.append((vid, "Romance Scam", f"{len(evts)} events ({num_msgs} messages)"))
+
     fake_ids = fake_account_user_ids or []
     for vid in fake_ids:
         if vid not in all_user_ids:
@@ -581,8 +626,8 @@ def generate_malicious_events(
 
     all_events.sort(key=lambda e: e.timestamp)
 
-    # Assign session IDs to ATO events (prefix "a" to distinguish from legit)
-    _assign_ato_session_ids(all_events)
+    # Assign session IDs to fraud events (prefix "a" to distinguish from legit)
+    _assign_fraud_session_ids(all_events)
 
     enforce_login_first_invariant(all_events)
     enforce_spam_after_login_invariant(all_events)
@@ -603,20 +648,4 @@ def generate_malicious_events(
     return all_events, victim_to_pattern
 
 
-__all__ = [
-    "generate_malicious_events",
-    "connection_harvester",
-    "country_hopper",
-    "credential_stuffer",
-    "credential_tester",
-    "data_thief",
-    "fake_account",
-    "login_storm",
-    "low_and_slow",
-    "profile_defacement",
-    "scraper_cluster",
-    "sleeper_agent",
-    "smash_and_grab",
-    "spear_phisher",
-    "stealth_takeover",
-]
+__all__ = ["generate_malicious_events"]

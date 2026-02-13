@@ -20,7 +20,7 @@ def test_empty_config_populates_all_sections() -> None:
     assert cfg.profiles
     assert cfg.user_agents
     assert cfg.email
-    assert cfg.usage_patterns
+    assert cfg.normal_patterns
     assert cfg.common
     assert cfg.fraud
 
@@ -44,7 +44,7 @@ def test_to_dict_returns_all_sections() -> None:
     d = DATASET_CONFIG.to_dict()
     assert set(d) == {
         "users", "connections", "profiles", "user_agents", "email",
-        "usage_patterns", "common", "fishy_accounts", "fraud",
+        "normal_patterns", "common", "fishy_accounts", "fraud",
     }
 
 
@@ -79,7 +79,7 @@ def test_validate_raises_on_negative_pct() -> None:
 def test_validate_raises_on_nested_invalid_pct() -> None:
     """_validate() raises for invalid pct in nested section."""
     with pytest.raises(AssertionError, match="login_once_pct"):
-        DatasetConfig(usage_patterns={"dormant_account": {"login_once_pct": 2.0}})
+        DatasetConfig(normal_patterns={"dormant_account": {"login_once_pct": 2.0}})
 
 
 def test_validate_raises_on_account_tier_sum() -> None:
@@ -100,9 +100,9 @@ def test_validate_raises_on_negative_pattern_weight() -> None:
 
 
 def test_validate_raises_on_negative_usage_pattern_weight() -> None:
-    """_validate() raises when usage_patterns weight is negative."""
+    """_validate() raises when normal_patterns weight is negative."""
     with pytest.raises(AssertionError, match="must be >= 0"):
-        DatasetConfig(usage_patterns={"pattern_weights": {"casual_browser": -0.1}})
+        DatasetConfig(normal_patterns={"pattern_weights": {"casual_browser": -0.1}})
 
 
 def test_validate_raises_on_non_numeric_pattern_weight() -> None:

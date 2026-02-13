@@ -779,6 +779,7 @@ class TestGenerateMaliciousEvents:
                 "scraper_cluster", "spear_phisher", "credential_tester",
                 "connection_harvester", "sleeper_agent", "fake_account",
                 "profile_defacement", "executive_hunter",
+                "credential_phishing", "session_hijacking", "romance_scam",
             }
 
     def test_with_fishy_accounts_adds_account_farming_harassment_like(
@@ -1205,10 +1206,12 @@ class TestRomanceScam:
         assert len(events) > 0
         assert counter > 0
         types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
         assert InteractionType.MESSAGE_USER in types
         for e in events:
             assert e.user_id == "u-0002"
-            assert e.target_user_id == "u-0001"
+            if e.interaction_type == InteractionType.MESSAGE_USER:
+                assert e.target_user_id == "u-0001"
 
     def test_many_messages_over_extended_period(
         self, rng: random.Random, base_time: datetime

@@ -56,14 +56,14 @@ def content_consumer(
                 counter, user.user_id, InteractionType.VIEW_USER_PAGE, ts, ip, ip_type,
                 country, user_agent, target_user_id=target, max_ts=now,
             ))
-            if rng.random() < get_cfg(config, "usage_patterns", "content_consumer", "connect_after_view_pct", default=0.05):
+            if rng.random() < get_cfg(config, "normal_patterns", "content_consumer", "connect_after_view_pct", default=0.05):
                 counter += 1
                 ts += timedelta(seconds=rng.randint(10, 60))
                 events.append(make_legit_event(
                     counter, user.user_id, InteractionType.CONNECT_WITH_USER, ts, ip, ip_type,
                     country, user_agent, target_user_id=target, max_ts=now,
                 ))
-            elif rng.random() < get_cfg(config, "usage_patterns", "content_consumer", "message_after_view_pct", default=0.15):
+            elif rng.random() < get_cfg(config, "normal_patterns", "content_consumer", "message_after_view_pct", default=0.15):
                 counter += 1
                 ts += timedelta(seconds=rng.randint(5, 45))
                 itype = rng.choice([InteractionType.LIKE, InteractionType.REACT])

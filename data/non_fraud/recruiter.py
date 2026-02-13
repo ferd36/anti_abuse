@@ -74,7 +74,7 @@ def recruiter(
         for target in targets:
             counter, ts = add_view_then_connect_or_message(
                 events, user.user_id, ts, ip, ip_type, country, user_agent,
-                target, counter, rng, do_connect=True, do_message=(rng.random() < get_cfg(config, "usage_patterns", "recruiter", "message_on_connect_pct", default=0.2)),
+                target, counter, rng, do_connect=True, do_message=(rng.random() < get_cfg(config, "normal_patterns", "recruiter", "message_on_connect_pct", default=0.2)),
                 max_ts=now,
             )
 
