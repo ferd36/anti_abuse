@@ -187,11 +187,15 @@ def make_login_with_many_failures(
 
 def enforce_login_first_invariant(events: list[UserInteraction]) -> None:
     first_login: dict[str, datetime] = {}
+    session_start_types = (InteractionType.LOGIN, InteractionType.SESSION_LOGIN)
+    no_login_required = (InteractionType.PHISHING_LOGIN,)  # Victim submits to fake page
     for e in events:
         uid = e.user_id
-        if e.interaction_type == InteractionType.LOGIN:
+        if e.interaction_type in session_start_types:
             if uid not in first_login:
                 first_login[uid] = e.timestamp
+        elif e.interaction_type in no_login_required:
+            pass
         else:
             assert uid in first_login and e.timestamp >= first_login[uid], (
                 f"Invariant violation: {e.interaction_type.value} for {uid} "
@@ -204,7 +208,7 @@ def enforce_spam_after_login_invariant(events: list[UserInteraction]) -> None:
     logins_seen: dict[str, int] = {}
     for e in events:
         uid = e.user_id
-        if e.interaction_type == InteractionType.LOGIN:
+        if e.interaction_type in (InteractionType.LOGIN, InteractionType.SESSION_LOGIN):
             logins_seen[uid] = logins_seen.get(uid, 0) + 1
         elif e.interaction_type == InteractionType.MESSAGE_USER:
             assert uid in logins_seen and logins_seen[uid] > 0, (

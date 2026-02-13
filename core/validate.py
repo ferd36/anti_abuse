@@ -73,6 +73,19 @@ def _enforce_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
                 raise AssertionError(
                     f"User {user_id}: CLOSE_ACCOUNT must be last, got {last.interaction_type}"
                 )
+        # POST_IN_GROUP: each group_id must have preceding JOIN_GROUP
+        groups_joined: set[str] = set()
+        for e in user_events:
+            if e.interaction_type == InteractionType.JOIN_GROUP:
+                gid = (e.metadata or {}).get("group_id")
+                if gid:
+                    groups_joined.add(gid)
+            elif e.interaction_type == InteractionType.POST_IN_GROUP:
+                gid = (e.metadata or {}).get("group_id")
+                if gid and gid not in groups_joined:
+                    raise AssertionError(
+                        f"User {user_id}: POST_IN_GROUP for group {gid!r} without preceding JOIN_GROUP"
+                    )
 
 
 def _enforce_non_fraud_temporal_invariants(events: list[UserInteraction]) -> None:
@@ -94,6 +107,14 @@ def _enforce_non_fraud_temporal_invariants(events: list[UserInteraction]) -> Non
             if e.interaction_type == InteractionType.DOWNLOAD_ADDRESS_BOOK:
                 raise AssertionError(
                     f"User {user_id}: normal users must not have DOWNLOAD_ADDRESS_BOOK"
+                )
+            if e.interaction_type == InteractionType.SESSION_LOGIN:
+                raise AssertionError(
+                    f"User {user_id}: normal users must not have SESSION_LOGIN"
+                )
+            if e.interaction_type == InteractionType.PHISHING_LOGIN:
+                raise AssertionError(
+                    f"User {user_id}: normal users must not have PHISHING_LOGIN"
                 )
         if any(e.interaction_type == InteractionType.CLOSE_ACCOUNT for e in user_events):
             last = user_events[-1]

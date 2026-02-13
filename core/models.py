@@ -217,6 +217,7 @@ class UserProfile:
       - endorsements_count >= 0.
       - profile_views_received >= 0.
       - location_text is a string, max 200 chars.
+      - groups_joined is a tuple of non-empty group_id strings (max 50 chars each).
     """
 
     user_id: str
@@ -231,6 +232,8 @@ class UserProfile:
     endorsements_count: int = 0
     profile_views_received: int = 0
     location_text: str = ""
+    groups_joined: tuple[str, ...] = ()
+    cloned_from_user_id: str | None = None  # If set, this profile impersonates that user
 
     def __post_init__(self) -> None:
         # --- user_id ---
@@ -310,6 +313,24 @@ class UserProfile:
             f"location_text must be max 200 chars, got {len(self.location_text)} chars"
         )
 
+        # --- groups_joined ---
+        assert isinstance(self.groups_joined, tuple), (
+            f"groups_joined must be a tuple, got {type(self.groups_joined)}"
+        )
+        for g in self.groups_joined:
+            assert isinstance(g, str) and 0 < len(g) <= 50, (
+                f"groups_joined entries must be non-empty strings ≤50 chars, got {g!r}"
+            )
+
+        # --- cloned_from_user_id ---
+        if self.cloned_from_user_id is not None:
+            assert isinstance(self.cloned_from_user_id, str) and len(self.cloned_from_user_id) > 0, (
+                f"cloned_from_user_id must be non-empty string when set, got {self.cloned_from_user_id!r}"
+            )
+            assert self.cloned_from_user_id != self.user_id, (
+                "cloned_from_user_id must differ from user_id (cannot clone self)"
+            )
+
 
 # ===================================================================
 # UserInteraction
@@ -356,6 +377,8 @@ class UserInteraction:
         InteractionType.CONNECT_WITH_USER,
         InteractionType.LIKE,
         InteractionType.REACT,
+        InteractionType.ENDORSE_SKILL,
+        InteractionType.GIVE_RECOMMENDATION,
     })
 
     # Interactions that must NOT have a target user
@@ -372,6 +395,21 @@ class UserInteraction:
         InteractionType.UPLOAD_ADDRESS_BOOK,
         InteractionType.DOWNLOAD_ADDRESS_BOOK,
         InteractionType.CLOSE_ACCOUNT,
+        InteractionType.CREATE_JOB_POSTING,
+        InteractionType.JOIN_GROUP,
+        InteractionType.LEAVE_GROUP,
+        InteractionType.POST_IN_GROUP,
+        InteractionType.AD_VIEW,
+        InteractionType.AD_CLICK,
+        InteractionType.SESSION_LOGIN,
+        InteractionType.PHISHING_LOGIN,
+    })
+
+    # Interactions with optional target (may have target_user_id or not)
+    _OPTIONAL_TARGET = frozenset({
+        InteractionType.APPLY_TO_JOB,
+        InteractionType.VIEW_JOB,
+        InteractionType.SEND_CONNECTION_REQUEST,
     })
 
     def __post_init__(self) -> None:
@@ -425,6 +463,14 @@ class UserInteraction:
                 f"{self.interaction_type.value} must not have a target_user_id, "
                 f"got {self.target_user_id!r}"
             )
+        elif self.interaction_type in self._OPTIONAL_TARGET:
+            if self.target_user_id is not None:
+                assert len(self.target_user_id) > 0, (
+                    f"{self.interaction_type.value} target_user_id must be non-empty when provided"
+                )
+                assert self.target_user_id != self.user_id, (
+                    f"target_user_id must differ from user_id (cannot interact with self)"
+                )
 
         # --- metadata ---
         assert isinstance(self.metadata, dict), (

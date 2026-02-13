@@ -82,6 +82,13 @@ def main() -> None:
     account_farming_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "account_farming"]
     harassment_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_harassment"]
     like_inflation_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_like_inflation"]
+    profile_cloning_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "profile_cloning"]
+    endorsement_inflation_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "endorsement_inflation"]
+    recommendation_fraud_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "recommendation_fraud"]
+    job_scam_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "job_posting_scam"]
+    invitation_spam_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "invitation_spam"]
+    group_spam_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == "group_spam"]
+    user_groups_joined = {p.user_id: p.groups_joined for p in profiles}
     ato_events, victim_to_pattern = generate_malicious_events(
         user_ids, user_countries,
         user_connections_count=user_connections_count,
@@ -92,6 +99,13 @@ def main() -> None:
         account_farming_user_ids=account_farming_user_ids,
         harassment_user_ids=harassment_user_ids,
         like_inflation_user_ids=like_inflation_user_ids,
+        profile_cloning_user_ids=profile_cloning_user_ids,
+        endorsement_inflation_user_ids=endorsement_inflation_user_ids,
+        recommendation_fraud_user_ids=recommendation_fraud_user_ids,
+        job_scam_user_ids=job_scam_user_ids,
+        invitation_spam_user_ids=invitation_spam_user_ids,
+        group_spam_user_ids=group_spam_user_ids,
+        user_groups_joined=user_groups_joined,
         seed=99,
         fraud_pct=args.fraud_pct,
         config=DATASET_CONFIG,

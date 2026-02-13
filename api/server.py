@@ -379,6 +379,8 @@ def get_user(user_id: str):
             "connections_count": profile.connections_count,
             "profile_created_at": profile.profile_created_at.isoformat(),
             "last_updated_at": profile.last_updated_at.isoformat() if profile.last_updated_at else None,
+            "groups_joined": list(profile.groups_joined),
+            "cloned_from_user_id": profile.cloned_from_user_id,
         } if profile else None,
         "connections_count": len(connections),
         "connections": [

@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     profile_completeness REAL NOT NULL DEFAULT 0.0,    -- 0.0 to 1.0
     endorsements_count   INTEGER NOT NULL DEFAULT 0,
     profile_views_received INTEGER NOT NULL DEFAULT 0,
-    location_text        TEXT NOT NULL DEFAULT ''
+    location_text        TEXT NOT NULL DEFAULT '',
+    groups_joined        TEXT NOT NULL DEFAULT '[]',  -- JSON array of group_id strings
+    cloned_from_user_id  TEXT REFERENCES users(user_id)  -- nullable, for profile cloning
 );
 
 CREATE TABLE IF NOT EXISTS user_interactions (
@@ -153,6 +155,20 @@ class Repository:
             except sqlite3.OperationalError as e:
                 if "duplicate column name" not in str(e).lower():
                     raise
+        # Migration: add groups_joined to user_profiles if missing
+        try:
+            self._conn.execute("ALTER TABLE user_profiles ADD COLUMN groups_joined TEXT NOT NULL DEFAULT '[]'")
+            self._conn.commit()
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
+        # Migration: add cloned_from_user_id to user_profiles if missing
+        try:
+            self._conn.execute("ALTER TABLE user_profiles ADD COLUMN cloned_from_user_id TEXT REFERENCES users(user_id)")
+            self._conn.commit()
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
 
     # ------------------------------------------------------------------
     # Users
@@ -218,7 +234,8 @@ class Repository:
             """SELECT u.*, p.display_name, p.headline, p.summary, p.connections_count,
                       p.profile_created_at, p.last_updated_at,
                       p.has_profile_photo, p.profile_completeness,
-                      p.endorsements_count, p.profile_views_received, p.location_text
+                      p.endorsements_count, p.profile_views_received, p.location_text,
+                      p.groups_joined, p.cloned_from_user_id
                FROM users u
                LEFT JOIN user_profiles p ON u.user_id = p.user_id
                WHERE u.user_id = ?""",
@@ -302,8 +319,8 @@ class Repository:
                (user_id, display_name, headline, summary, connections_count,
                 profile_created_at, last_updated_at, has_profile_photo,
                 profile_completeness, endorsements_count, profile_views_received,
-                location_text)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                location_text, groups_joined, cloned_from_user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._profile_to_row(profile),
         )
         self._conn.commit()
@@ -317,8 +334,8 @@ class Repository:
                (user_id, display_name, headline, summary, connections_count,
                 profile_created_at, last_updated_at, has_profile_photo,
                 profile_completeness, endorsements_count, profile_views_received,
-                location_text)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                location_text, groups_joined, cloned_from_user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             rows,
         )
         self._conn.commit()
@@ -331,6 +348,8 @@ class Repository:
             _dt_to_iso(p.last_updated_at) if p.last_updated_at else None,
             1 if p.has_profile_photo else 0, p.profile_completeness,
             p.endorsements_count, p.profile_views_received, p.location_text,
+            json.dumps(list(p.groups_joined)),
+            getattr(p, "cloned_from_user_id", None),
         )
 
     def get_profile(self, user_id: str) -> UserProfile | None:
@@ -346,6 +365,12 @@ class Repository:
     @staticmethod
     def _row_to_profile(row: sqlite3.Row) -> UserProfile:
         keys = row.keys()
+        raw = row["groups_joined"] if "groups_joined" in keys else "[]"
+        try:
+            groups = tuple(json.loads(raw)) if raw else ()
+        except (json.JSONDecodeError, TypeError):
+            groups = ()
+        cloned_from = row["cloned_from_user_id"] if "cloned_from_user_id" in keys else None
         return UserProfile(
             user_id=row["user_id"],
             display_name=row["display_name"],
@@ -359,6 +384,8 @@ class Repository:
             endorsements_count=row["endorsements_count"] if "endorsements_count" in keys else 0,
             profile_views_received=row["profile_views_received"] if "profile_views_received" in keys else 0,
             location_text=row["location_text"] if "location_text" in keys else "",
+            groups_joined=groups,
+            cloned_from_user_id=cloned_from if cloned_from else None,
         )
 
     # ------------------------------------------------------------------

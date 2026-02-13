@@ -20,12 +20,14 @@ from core.enums import InteractionType, IPType
 from core.models import User
 from data.non_fraud import PATTERN_NAMES, generate_legitimate_events
 from data.non_fraud.active_job_seeker import active_job_seeker
+from data.non_fraud.career_update import career_update
 from data.non_fraud.casual_browser import casual_browser
 from data.non_fraud.content_consumer import content_consumer
+from data.non_fraud.dormant_account import dormant_account
+from data.non_fraud.exec_delegation import exec_delegation
 from data.non_fraud.new_user_onboarding import new_user_onboarding
 from data.non_fraud.recruiter import recruiter
 from data.non_fraud.regular_networker import regular_networker
-from data.non_fraud.exec_delegation import exec_delegation
 from data.non_fraud.returning_user import returning_user
 from data.non_fraud.weekly_check_in import weekly_check_in
 
@@ -337,6 +339,122 @@ class TestContentConsumer:
         assert len(events) > 0
         view_count = sum(1 for e in events if e.interaction_type == InteractionType.VIEW_USER_PAGE)
         assert view_count >= 5
+
+
+class TestCareerUpdate:
+    def test_produces_profile_updates(
+        self,
+        sample_user: User,
+        all_user_ids: list[str],
+        window_start: datetime,
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        events, counter = career_update(
+            sample_user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+        )
+        assert isinstance(events, list)
+        if events:
+            update_types = {
+                InteractionType.UPDATE_HEADLINE,
+                InteractionType.UPDATE_SUMMARY,
+                InteractionType.CHANGE_LAST_NAME,
+            }
+            types = {e.interaction_type for e in events}
+            assert types & update_types or InteractionType.LOGIN in types
+
+    def test_early_return_days_available_under_14(
+        self,
+        all_user_ids: list[str],
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        user = _make_user(join_date=now - timedelta(days=3))
+        window_start = now - timedelta(days=2)
+        events, counter = career_update(
+            user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+        )
+        assert events == []
+        assert counter == 0
+
+    def test_no_browsing_or_messaging(
+        self,
+        sample_user: User,
+        all_user_ids: list[str],
+        window_start: datetime,
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        config = {
+            "usage_patterns": {
+                "career_update": {
+                    "update_type_headline": 1.0,
+                    "update_type_summary": 0,
+                    "second_update_in_session_pct": 0,
+                },
+            },
+        }
+        events, _ = career_update(
+            sample_user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+            config=config,
+        )
+        for e in events:
+            assert e.interaction_type not in (
+                InteractionType.VIEW_USER_PAGE,
+                InteractionType.MESSAGE_USER,
+                InteractionType.CONNECT_WITH_USER,
+            )
+
+
+class TestDormantAccount:
+    def test_returns_at_most_one_login(
+        self,
+        all_user_ids: list[str],
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        user = _make_user(join_date=now - timedelta(days=30))
+        window_start = now - timedelta(days=60)
+        events, counter = dormant_account(
+            user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+        )
+        assert len(events) <= 1
+        if events:
+            assert events[0].interaction_type == InteractionType.LOGIN
+
+    def test_no_profile_views_connections_messages(
+        self,
+        all_user_ids: list[str],
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        config = {"usage_patterns": {"dormant_account": {"login_once_pct": 1.0}}}
+        user = _make_user(join_date=now - timedelta(days=30))
+        window_start = now - timedelta(days=60)
+        events, _ = dormant_account(
+            user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+            config=config,
+        )
+        for e in events:
+            assert e.interaction_type not in (
+                InteractionType.VIEW_USER_PAGE,
+                InteractionType.CONNECT_WITH_USER,
+                InteractionType.MESSAGE_USER,
+            )
+
+    def test_early_return_days_available_under_1(
+        self,
+        all_user_ids: list[str],
+        now: datetime,
+        rng: random.Random,
+    ) -> None:
+        user = _make_user(join_date=now - timedelta(hours=12))
+        window_start = now - timedelta(days=1)
+        events, counter = dormant_account(
+            user, all_user_ids, window_start, now, 0, rng, "Mozilla/5.0",
+        )
+        assert events == []
+        assert counter == 0
 
 
 # ---------------------------------------------------------------------------

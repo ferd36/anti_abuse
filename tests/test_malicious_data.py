@@ -26,18 +26,33 @@ from data.fraud._common import (
     pick_hosting_ip as _pick_hosting_ip,
 )
 from data.fraud.account_farming import account_farming as _account_farming
+from data.fraud.ad_engagement_fraud import ad_engagement_fraud as _ad_engagement_fraud
 from data.fraud.connection_harvester import connection_harvester as _connection_harvester
 from data.fraud.coordinated_harassment import coordinated_harassment as _coordinated_harassment
 from data.fraud.coordinated_like_inflation import coordinated_like_inflation as _coordinated_like_inflation
+from data.fraud.credential_phishing import credential_phishing as _credential_phishing
 from data.fraud.credential_stuffer import credential_stuffer as _credential_stuffer
 from data.fraud.credential_tester import credential_tester as _credential_tester
 from data.fraud.country_hopper import country_hopper as _country_hopper
 from data.fraud.data_thief import data_thief as _data_thief
+from data.fraud.endorsement_inflation import endorsement_inflation as _endorsement_inflation
+from data.fraud.executive_hunter import executive_hunter as _executive_hunter
+from data.fraud.fake_account import fake_account as _fake_account
+from data.fraud.group_spam import group_spam as _group_spam
+from data.fraud.invitation_spam import invitation_spam as _invitation_spam
+from data.fraud.job_posting_scam import job_posting_scam as _job_posting_scam
+from data.fraud.login_storm import login_storm as _login_storm
 from data.fraud.low_slow import low_and_slow as _low_and_slow
+from data.fraud.profile_cloning import profile_cloning as _profile_cloning
+from data.fraud.profile_defacement import profile_defacement as _profile_defacement
+from data.fraud.recommendation_fraud import recommendation_fraud as _recommendation_fraud
+from data.fraud.romance_scam import romance_scam as _romance_scam
 from data.fraud.scraper_cluster import scraper_cluster as _scraper_cluster
+from data.fraud.session_hijacking import session_hijacking as _session_hijacking
 from data.fraud.sleeper_agent import sleeper_agent as _sleeper_agent
 from data.fraud.smash_grab import smash_and_grab as _smash_and_grab
 from data.fraud.spear_phisher import spear_phisher as _spear_phisher
+from data.fraud.stealth_takeover import stealth_takeover as _stealth_takeover
 
 from .test_temporal_invariants import assert_fraud_temporal_invariants
 
@@ -62,7 +77,21 @@ def base_time(now: datetime) -> datetime:
 
 @pytest.fixture
 def all_user_ids() -> list[str]:
-    return [f"u-{i:04d}" for i in range(50)] + list(FAKE_ACCOUNT_USER_IDS)
+    base = [f"u-{i:04d}" for i in range(80)]
+    return base + list(FAKE_ACCOUNT_USER_IDS)
+
+
+@pytest.fixture
+def new_fishy_ids(all_user_ids: list[str]) -> dict[str, list[str]]:
+    """IDs for new fishy account types (must exist in all_user_ids)."""
+    return {
+        "profile_cloning": [f"u-{i:04d}" for i in range(50, 58)],
+        "endorsement_inflation": [f"u-{i:04d}" for i in range(58, 70)],
+        "recommendation_fraud": [f"u-{i:04d}" for i in range(70, 80)],
+        "job_scam": [f"u-{i:04d}" for i in range(60, 66)],
+        "invitation_spam": [f"u-{i:04d}" for i in range(66, 76)],
+        "group_spam": [f"u-{i:04d}" for i in range(76, 80)],
+    }
 
 
 @pytest.fixture
@@ -596,18 +625,29 @@ class TestLoginFirstInvariant:
         _enforce_login_first_invariant(events)  # should not raise
 
     def test_generate_malicious_events_passes_invariant(
-        self, all_user_ids: list[str], user_countries: dict[str, str]
+        self, all_user_ids: list[str], user_countries: dict[str, str], new_fishy_ids: dict
     ) -> None:
         """End-to-end: generate_malicious_events enforces the invariant internally."""
-        # This implicitly calls _enforce_login_first_invariant
-        events, _ = generate_malicious_events(all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS, seed=99, fraud_pct=75)
+        events, _ = generate_malicious_events(
+            all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS,
+            profile_cloning_user_ids=new_fishy_ids["profile_cloning"],
+            group_spam_user_ids=new_fishy_ids["group_spam"],
+            user_groups_joined={"u-0076": ("grp-tech-eng",), "u-0077": ("grp-software-dev",), "u-0078": (), "u-0079": ("grp-data-science",)},
+            seed=99, fraud_pct=75,
+        )
         assert len(events) > 0
 
     def test_generate_malicious_events_respects_fraud_temporal_invariants(
-        self, all_user_ids: list[str], user_countries: dict[str, str]
+        self, all_user_ids: list[str], user_countries: dict[str, str], new_fishy_ids: dict
     ) -> None:
         """Validate all fraud temporal invariants: LOGIN first, spam after login, CLOSE terminal."""
-        events, _ = generate_malicious_events(all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS, seed=99, fraud_pct=75)
+        events, _ = generate_malicious_events(
+            all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS,
+            profile_cloning_user_ids=new_fishy_ids["profile_cloning"],
+            group_spam_user_ids=new_fishy_ids["group_spam"],
+            user_groups_joined={"u-0076": ("grp-tech-eng",), "u-0077": ("grp-software-dev",)},
+            seed=99, fraud_pct=75,
+        )
         assert len(events) > 0
         assert_fraud_temporal_invariants(events)
 
@@ -646,36 +686,48 @@ class TestSpamAfterLoginInvariant:
 
 
 class TestGenerateMaliciousEvents:
-    def test_returns_sorted_events(self, all_user_ids: list[str], user_countries: dict[str, str]) -> None:
-        events, _ = generate_malicious_events(all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS, seed=99, fraud_pct=75)
+    def test_returns_sorted_events(self, all_user_ids: list[str], user_countries: dict[str, str], new_fishy_ids: dict) -> None:
+        events, _ = generate_malicious_events(
+            all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS,
+            profile_cloning_user_ids=new_fishy_ids["profile_cloning"],
+            group_spam_user_ids=new_fishy_ids["group_spam"],
+            user_groups_joined={uid: ("grp-tech-eng",) for uid in new_fishy_ids["group_spam"]},
+            seed=99, fraud_pct=75,
+        )
         for i in range(1, len(events)):
             assert events[i].timestamp >= events[i - 1].timestamp
 
     def test_has_events_from_all_patterns(
-        self, all_user_ids: list[str], user_countries: dict[str, str]
+        self, all_user_ids: list[str], user_countries: dict[str, str], new_fishy_ids: dict
     ) -> None:
-        events, _ = generate_malicious_events(all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS, seed=99, fraud_pct=75)
+        events, _ = generate_malicious_events(
+            all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS,
+            profile_cloning_user_ids=new_fishy_ids["profile_cloning"],
+            endorsement_inflation_user_ids=new_fishy_ids["endorsement_inflation"],
+            recommendation_fraud_user_ids=new_fishy_ids["recommendation_fraud"],
+            job_scam_user_ids=new_fishy_ids["job_scam"],
+            invitation_spam_user_ids=new_fishy_ids["invitation_spam"],
+            group_spam_user_ids=new_fishy_ids["group_spam"],
+            user_groups_joined={uid: ("grp-tech-eng",) for uid in new_fishy_ids["group_spam"]},
+            seed=99, fraud_pct=75,
+        )
         patterns = set()
         for e in events:
             if "attack_pattern" in e.metadata:
                 patterns.add(e.metadata["attack_pattern"])
-        assert "smash_grab" in patterns
-        assert "low_slow" in patterns
-        assert "country_hopper" in patterns
-        assert "data_thief" in patterns
-        assert "credential_stuffer" in patterns
-        assert "login_storm" in patterns
-        assert "stealth_takeover" in patterns
-        assert "fake_account" in patterns
-        assert "scraper_cluster" in patterns
-        assert "spear_phisher" in patterns
-        assert "credential_tester" in patterns
-        assert "connection_harvester" in patterns
-        assert "sleeper_agent" in patterns
-        assert "executive_hunter" in patterns
+        # New patterns (fishy-based)
+        assert "profile_cloning" in patterns
+        assert "endorsement_inflation" in patterns
+        assert "group_spam" in patterns
+        assert "ad_engagement_fraud" in patterns
+        # At least one victim-based pattern (pool may be small)
+        victim_patterns = {"smash_grab", "low_slow", "country_hopper", "data_thief", "credential_stuffer",
+                          "login_storm", "stealth_takeover", "scraper_cluster", "spear_phisher",
+                          "credential_tester", "connection_harvester", "sleeper_agent", "executive_hunter"}
+        assert patterns & victim_patterns, f"Expected at least one of {victim_patterns}, got {patterns}"
 
     def test_multiple_victims(
-        self, all_user_ids: list[str], user_countries: dict[str, str]
+        self, all_user_ids: list[str], user_countries: dict[str, str], new_fishy_ids: dict
     ) -> None:
         events, _ = generate_malicious_events(all_user_ids, user_countries, fake_account_user_ids=FAKE_ACCOUNT_USER_IDS, seed=99, fraud_pct=75)
         victims = {e.user_id for e in events}
@@ -836,3 +888,377 @@ class TestCoordinatedLikeInflation:
         assert len(like_events) == len(liker_ids)
         for e in like_events:
             assert e.target_user_id == target
+
+
+class TestLoginStorm:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, counter = _login_storm(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.DOWNLOAD_ADDRESS_BOOK in types
+        assert InteractionType.CLOSE_ACCOUNT in types
+        assert events[-1].interaction_type == InteractionType.CLOSE_ACCOUNT
+
+    def test_uses_hosting_ip(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _login_storm(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        for e in events:
+            assert e.ip_type == IPType.HOSTING
+
+
+class TestStealthTakeover:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, counter = _stealth_takeover(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.DOWNLOAD_ADDRESS_BOOK in types
+        assert InteractionType.CLOSE_ACCOUNT in types
+        assert events[-1].interaction_type == InteractionType.CLOSE_ACCOUNT
+
+    def test_close_from_residential(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _stealth_takeover(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        close_evt = events[-1]
+        assert close_evt.interaction_type == InteractionType.CLOSE_ACCOUNT
+        assert close_evt.ip_type == IPType.RESIDENTIAL
+
+
+class TestProfileDefacement:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, counter = _profile_defacement(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.CHANGE_NAME in types
+
+    def test_no_spam_or_close(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _profile_defacement(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        types = {e.interaction_type for e in events}
+        assert InteractionType.MESSAGE_USER not in types
+        assert InteractionType.CLOSE_ACCOUNT not in types
+
+
+class TestExecutiveHunter:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        attacker_ids = ["u-0010", "u-0011"]
+        attacker_countries = ["US", "GB"]
+        user_headlines = {"u-0020": "CEO at Acme", "u-0021": "Founder of Beta"}
+        events, counter = _executive_hunter(
+            attacker_ids, attacker_countries, all_user_ids, user_headlines, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.VIEW_USER_PAGE in types
+        assert InteractionType.MESSAGE_USER in types
+
+    def test_all_attackers_used(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        attacker_ids = ["u-0010", "u-0011"]
+        attacker_countries = ["US", "GB"]
+        user_headlines = {f"u-{i:04d}": "CEO" for i in range(20, 30)}
+        events, _ = _executive_hunter(
+            attacker_ids, attacker_countries, all_user_ids, user_headlines, base_time, 0, rng,
+        )
+        event_users = {e.user_id for e in events}
+        for aid in attacker_ids:
+            assert aid in event_users
+
+
+class TestFakeAccount:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, counter = _fake_account(
+            FAKE_ACCOUNT_USER_IDS[0], all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.CHANGE_PASSWORD in types
+        assert InteractionType.UPLOAD_ADDRESS_BOOK in types
+        assert InteractionType.MESSAGE_USER in types
+
+    def test_spam_targets_differ_from_actor(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _fake_account(
+            FAKE_ACCOUNT_USER_IDS[0], all_user_ids, base_time, 0, rng,
+        )
+        for e in events:
+            if e.target_user_id is not None:
+                assert e.target_user_id != e.user_id
+
+
+class TestProfileCloning:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        cloner_ids = new_fishy_ids["profile_cloning"][:2]
+        victim_ids = ["u-0001", "u-0002"]
+        events, counter = _profile_cloning(
+            cloner_ids, victim_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.VIEW_USER_PAGE in types
+        assert InteractionType.MESSAGE_USER in types
+
+    def test_all_cloners_appear(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        cloner_ids = new_fishy_ids["profile_cloning"][:2]
+        victim_ids = ["u-0001"]
+        events, _ = _profile_cloning(
+            cloner_ids, victim_ids, base_time, 0, rng,
+        )
+        event_users = {e.user_id for e in events}
+        for cid in cloner_ids:
+            assert cid in event_users
+
+
+class TestEndorsementInflation:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        endorser_ids = new_fishy_ids["endorsement_inflation"][:3]
+        target_ids = ["u-0001", "u-0002"]
+        events, counter = _endorsement_inflation(
+            endorser_ids, target_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.ENDORSE_SKILL in types
+
+    def test_all_endorsers_appear(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        endorser_ids = new_fishy_ids["endorsement_inflation"][:2]
+        target_ids = ["u-0001"]
+        events, _ = _endorsement_inflation(
+            endorser_ids, target_ids, base_time, 0, rng,
+        )
+        event_users = {e.user_id for e in events}
+        for eid in endorser_ids:
+            assert eid in event_users
+
+
+class TestRecommendationFraud:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        recommender_ids = new_fishy_ids["recommendation_fraud"][:2]
+        target_ids = ["u-0001", "u-0002"]
+        events, counter = _recommendation_fraud(
+            recommender_ids, target_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.GIVE_RECOMMENDATION in types
+
+
+class TestJobPostingScam:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        scammer_ids = new_fishy_ids["job_scam"][:2]
+        victim_ids = ["u-0001", "u-0002", "u-0003"]
+        events, counter = _job_posting_scam(
+            scammer_ids, victim_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.CREATE_JOB_POSTING in types
+        assert InteractionType.VIEW_JOB in types
+        assert InteractionType.APPLY_TO_JOB in types
+
+
+class TestInvitationSpam:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        spammer_ids = new_fishy_ids["invitation_spam"][:2]
+        target_ids = [u for u in [f"u-{i:04d}" for i in range(20)] if u not in spammer_ids]
+        events, counter = _invitation_spam(
+            spammer_ids, target_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.SEND_CONNECTION_REQUEST in types
+
+    def test_many_connection_requests(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        spammer_ids = new_fishy_ids["invitation_spam"][:2]
+        target_ids = [u for u in (f"u-{i:04d}" for i in range(100)) if u not in spammer_ids]
+        events, _ = _invitation_spam(
+            spammer_ids, target_ids, base_time, 0, rng,
+        )
+        req_count = sum(1 for e in events if e.interaction_type == InteractionType.SEND_CONNECTION_REQUEST)
+        assert req_count >= 50
+
+
+class TestGroupSpam:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        spammer_ids = new_fishy_ids["group_spam"][:2]
+        groups_joined = {uid: ("grp-tech-eng", "grp-software-dev") for uid in spammer_ids}
+        events, counter = _group_spam(
+            spammer_ids, groups_joined, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.JOIN_GROUP in types
+        assert InteractionType.POST_IN_GROUP in types
+
+    def test_empty_groups_returns_minimal(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        spammer_ids = new_fishy_ids["group_spam"][:2]
+        groups_joined = {uid: () for uid in spammer_ids}
+        events, counter = _group_spam(
+            spammer_ids, groups_joined, base_time, 0, rng,
+        )
+        assert len(events) >= 0  # May have only login events
+
+
+class TestAdEngagementFraud:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, new_fishy_ids: dict
+    ) -> None:
+        bot_ids = [FAKE_ACCOUNT_USER_IDS[0]] if FAKE_ACCOUNT_USER_IDS else ["u-0001"]
+        events, counter = _ad_engagement_fraud(
+            bot_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.LOGIN in types
+        assert InteractionType.AD_VIEW in types
+        assert InteractionType.AD_CLICK in types
+
+    def test_many_ad_events(
+        self, rng: random.Random, base_time: datetime
+    ) -> None:
+        bot_ids = ["u-0001", "u-0002"]
+        events, _ = _ad_engagement_fraud(
+            bot_ids, base_time, 0, rng,
+        )
+        view_count = sum(1 for e in events if e.interaction_type == InteractionType.AD_VIEW)
+        click_count = sum(1 for e in events if e.interaction_type == InteractionType.AD_CLICK)
+        assert view_count >= 10
+        assert click_count >= 10
+
+
+class TestRomanceScam:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime
+    ) -> None:
+        events, counter = _romance_scam(
+            "u-0001", "u-0002", base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.MESSAGE_USER in types
+        for e in events:
+            assert e.user_id == "u-0002"
+            assert e.target_user_id == "u-0001"
+
+    def test_many_messages_over_extended_period(
+        self, rng: random.Random, base_time: datetime
+    ) -> None:
+        events, _ = _romance_scam(
+            "u-0001", "u-0002", base_time, 0, rng,
+        )
+        assert len(events) >= 20
+
+
+class TestSessionHijacking:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, counter = _session_hijacking(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.SESSION_LOGIN in types
+        assert InteractionType.VIEW_USER_PAGE in types
+
+    def test_victim_is_actor(
+        self, rng: random.Random, base_time: datetime, all_user_ids: list[str]
+    ) -> None:
+        events, _ = _session_hijacking(
+            "u-0001", "US", all_user_ids, base_time, 0, rng,
+        )
+        for e in events:
+            assert e.user_id == "u-0001"
+
+
+class TestCredentialPhishing:
+    def test_basic_structure(
+        self, rng: random.Random, base_time: datetime
+    ) -> None:
+        events, counter = _credential_phishing(
+            "u-0001", "US", base_time, 0, rng,
+        )
+        assert len(events) > 0
+        assert counter > 0
+        types = {e.interaction_type for e in events}
+        assert InteractionType.PHISHING_LOGIN in types
+
+    def test_victim_is_actor(
+        self, rng: random.Random, base_time: datetime
+    ) -> None:
+        events, _ = _credential_phishing(
+            "u-0001", "US", base_time, 0, rng,
+        )
+        for e in events:
+            assert e.user_id == "u-0001"

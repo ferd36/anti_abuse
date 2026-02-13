@@ -90,6 +90,12 @@ def _default_config() -> dict:
             "num_account_farming": 15,
             "num_harassment": 12,
             "num_like_inflation": 10,
+            "num_profile_cloning": 8,
+            "num_endorsement_inflation": 12,
+            "num_recommendation_fraud": 10,
+            "num_job_scam": 6,
+            "num_invitation_spam": 15,
+            "num_group_spam": 8,
             "pharmacy": {
                 "hosting_ip_pct": 0.15,
                 "email_verified_pct": 0.3,
@@ -110,6 +116,9 @@ def _default_config() -> dict:
                 "farming_endorsements_max": 2,
                 "harassment_has_photo_pct": 0.3,
                 "like_inflation_has_photo_pct": 0.3,
+                "profile_cloning_has_photo_pct": 0.9,
+                "endorsement_inflation_endorsements_max": 50,
+                "recommendation_fraud_recommendations_max": 5,
             },
         },
         "fraud": {
@@ -128,6 +137,10 @@ def _default_config() -> dict:
                 "sleeper_agent": 0.049,
                 "profile_defacement": 0.049,
                 "executive_hunter": 0.068,
+                "romance_scam": 0.04,
+                "session_hijacking": 0.03,
+                "credential_phishing": 0.04,
+                "ad_engagement_fraud": 0.02,
             },
             "fake_account": {"change_profile_pct": 0.70, "change_name_pct": 0.60},
             "account_farming": {
@@ -162,6 +175,54 @@ def _default_config() -> dict:
             "profile_defacement": {
                 "change_profile_pct": 0.85,
                 "change_password_pct": 0.40,
+            },
+            "profile_cloning": {
+                "messages_per_victim_min": 3,
+                "messages_per_victim_max": 15,
+                "connect_before_message_pct": 0.7,
+            },
+            "endorsement_inflation": {
+                "endorsements_per_skill_min": 5,
+                "endorsements_per_skill_max": 20,
+                "cluster_ips_max": 4,
+            },
+            "recommendation_fraud": {
+                "recommendations_per_pair": 1,
+                "cluster_ips_max": 4,
+            },
+            "job_posting_scam": {
+                "applications_per_job_min": 10,
+                "applications_per_job_max": 100,
+                "phishing_redirect_pct": 0.4,
+            },
+            "invitation_spam": {
+                "requests_per_account_min": 50,
+                "requests_per_account_max": 200,
+                "cluster_ips_max": 4,
+            },
+            "group_spam": {
+                "posts_per_group_min": 3,
+                "posts_per_group_max": 15,
+                "groups_per_account_min": 1,
+                "groups_per_account_max": 5,
+            },
+            "romance_scam": {
+                "messages_per_victim_min": 20,
+                "messages_per_victim_max": 100,
+                "duration_days_min": 7,
+                "duration_days_max": 60,
+            },
+            "session_hijacking": {
+                "actions_after_hijack_min": 5,
+                "actions_after_hijack_max": 30,
+            },
+            "credential_phishing": {
+                "capture_then_login_pct": 0.8,
+            },
+            "ad_engagement_fraud": {
+                "clicks_per_ad_min": 10,
+                "clicks_per_ad_max": 500,
+                "cluster_ips_max": 4,
             },
         },
     }
@@ -246,7 +307,13 @@ class DatasetConfig:
                 if not isinstance(w, (int, float)) or w < 0:
                     errs.append(f"{pattern}.{k}={w}: must be >= 0")
 
-        for key in ("num_fake", "num_pharmacy", "num_covert_porn", "num_account_farming", "num_harassment", "num_like_inflation"):
+        num_keys = (
+            "num_fake", "num_pharmacy", "num_covert_porn", "num_account_farming",
+            "num_harassment", "num_like_inflation", "num_profile_cloning",
+            "num_endorsement_inflation", "num_recommendation_fraud", "num_job_scam",
+            "num_invitation_spam", "num_group_spam",
+        )
+        for key in num_keys:
             val = self.fishy_accounts.get(key, 0)
             if not isinstance(val, int) or val < 0:
                 errs.append(f"fishy_accounts.{key}={val}: must be non-negative int")

@@ -32,10 +32,16 @@ from core.constants import (
     INTERACTION_WINDOW_DAYS,
     NUM_ACCOUNT_FARMING_ACCOUNTS,
     NUM_COVERT_PORN_ACCOUNTS,
+    NUM_ENDORSEMENT_INFLATION_ACCOUNTS,
     NUM_FAKE_ACCOUNTS,
+    NUM_GROUP_SPAM_ACCOUNTS,
     NUM_HARASSMENT_ACCOUNTS,
+    NUM_INVITATION_SPAM_ACCOUNTS,
+    NUM_JOB_SCAM_ACCOUNTS,
     NUM_LIKE_INFLATION_ACCOUNTS,
     NUM_PHARMACY_ACCOUNTS,
+    NUM_PROFILE_CLONING_ACCOUNTS,
+    NUM_RECOMMENDATION_FRAUD_ACCOUNTS,
     NUM_USERS,
 )
 from core.enums import InteractionType, IPType
@@ -483,6 +489,15 @@ _LOCATIONS = [
     "",
 ]
 
+# Group IDs for groups_joined (LinkedIn-style professional groups)
+_GROUPS = [
+    "grp-tech-eng", "grp-software-dev", "grp-data-science", "grp-product-mgmt",
+    "grp-marketing-digital", "grp-sales-pro", "grp-hr-recruiting", "grp-finance",
+    "grp-startups", "grp-freelancers", "grp-remote-work", "grp-career-advice",
+    "grp-leadership", "grp-entrepreneurs", "grp-design-creative", "grp-healthcare",
+    "grp-education", "grp-legal", "grp-real-estate", "grp-consulting",
+]
+
 # Addresses by country (for user.address); subset of _LOCATIONS
 _ADDRESSES_BY_COUNTRY: dict[str, list[str]] = {
     "US": ["New York, NY", "San Francisco, CA", "Chicago, IL", "Austin, TX", "Boston, MA", "Seattle, WA", "Denver, CO"],
@@ -823,8 +838,10 @@ def _generate_users(
     return users, used_emails, name_map
 
 
-def _fishy_counts(config: dict | None) -> tuple[int, int, int, int, int, int]:
-    """Return (num_fake, num_pharmacy, num_covert_porn, num_account_farming, num_harassment, num_like_inflation)."""
+def _fishy_counts(config: dict | None) -> tuple[int, ...]:
+    """Return (num_fake, num_pharmacy, num_covert_porn, num_account_farming, num_harassment,
+    num_like_inflation, num_profile_cloning, num_endorsement_inflation, num_recommendation_fraud,
+    num_job_scam, num_invitation_spam, num_group_spam)."""
     cfg = config or {}
     return (
         get_cfg(cfg, "fishy_accounts", "num_fake", default=NUM_FAKE_ACCOUNTS),
@@ -833,6 +850,12 @@ def _fishy_counts(config: dict | None) -> tuple[int, int, int, int, int, int]:
         get_cfg(cfg, "fishy_accounts", "num_account_farming", default=NUM_ACCOUNT_FARMING_ACCOUNTS),
         get_cfg(cfg, "fishy_accounts", "num_harassment", default=NUM_HARASSMENT_ACCOUNTS),
         get_cfg(cfg, "fishy_accounts", "num_like_inflation", default=NUM_LIKE_INFLATION_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_profile_cloning", default=NUM_PROFILE_CLONING_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_endorsement_inflation", default=NUM_ENDORSEMENT_INFLATION_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_recommendation_fraud", default=NUM_RECOMMENDATION_FRAUD_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_job_scam", default=NUM_JOB_SCAM_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_invitation_spam", default=NUM_INVITATION_SPAM_ACCOUNTS),
+        get_cfg(cfg, "fishy_accounts", "num_group_spam", default=NUM_GROUP_SPAM_ACCOUNTS),
     )
 
 
@@ -1244,6 +1267,63 @@ def _generate_like_inflation_users(
     return users, name_map
 
 
+def _generate_fishy_users(
+    rng: random.Random,
+    now: datetime,
+    used_emails: set[str],
+    base_idx: int,
+    count: int,
+    pattern: str,
+    prefix: str,
+) -> tuple[list[User], dict[str, tuple[str, str]]]:
+    """Generic fishy user generator. Used for profile_cloning, endorsement_inflation, etc."""
+    users: list[User] = []
+    name_map: dict[str, tuple[str, str]] = {}
+    for i in range(count):
+        user_id = f"u-{base_idx + i:06d}"
+        country = "RU"
+        language = "en"
+        days_ago = rng.randint(20, 45)
+        join_date = now - timedelta(days=days_ago, seconds=rng.randint(0, 86400))
+
+        first, last = rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)
+        name_map[user_id] = (first, last)
+        f, l = _ascii_local(first), _ascii_local(last)
+        local = f"{prefix}{base_idx}.{f}.{l}{rng.randint(1, 9999)}"
+        domain = rng.choices(_EMAIL_DOMAINS, weights=_EMAIL_DOMAIN_WEIGHTS, k=1)[0]
+        email = f"{local}@{domain}"
+        while email in used_emails:
+            local = f"{prefix}{base_idx}.{f}.{l}{rng.randint(1, 99999)}"
+            email = f"{local}@{domain}"
+        used_emails.add(email)
+
+        ip_address = rng.choice(_FAKE_ACCOUNT_IP_POOL_RU)
+        ip_type = IPType.HOSTING
+
+        users.append(User(
+            user_id=user_id,
+            email=email,
+            join_date=join_date,
+            country=country,
+            ip_address=ip_address,
+            registration_ip=ip_address,
+            registration_country=country,
+            address="",
+            ip_type=ip_type,
+            language=language,
+            is_active=True,
+            generation_pattern=pattern,
+            email_verified=False,
+            two_factor_enabled=False,
+            last_password_change_at=None,
+            account_tier="free",
+            failed_login_streak=0,
+            phone_verified=False,
+        ))
+
+    return users, name_map
+
+
 # ---------------------------------------------------------------------------
 # Profile generation
 # ---------------------------------------------------------------------------
@@ -1263,6 +1343,14 @@ def _generate_profiles(
     is_account_farming = lambda u: getattr(u, "generation_pattern", "") == "account_farming"
     is_harassment = lambda u: getattr(u, "generation_pattern", "") == "coordinated_harassment"
     is_like_inflation = lambda u: getattr(u, "generation_pattern", "") == "coordinated_like_inflation"
+    is_profile_cloning = lambda u: getattr(u, "generation_pattern", "") == "profile_cloning"
+    is_endorsement_inflation = lambda u: getattr(u, "generation_pattern", "") == "endorsement_inflation"
+    is_recommendation_fraud = lambda u: getattr(u, "generation_pattern", "") == "recommendation_fraud"
+    is_job_scam = lambda u: getattr(u, "generation_pattern", "") == "job_posting_scam"
+    is_invitation_spam = lambda u: getattr(u, "generation_pattern", "") == "invitation_spam"
+    is_group_spam = lambda u: getattr(u, "generation_pattern", "") == "group_spam"
+
+    legit_user_ids = [u.user_id for u in users if getattr(u, "generation_pattern", "") == GENERATION_PATTERN_CLEAN]
 
     for user in users:
         is_fake = user.user_id in fake_ids
@@ -1271,6 +1359,12 @@ def _generate_profiles(
         is_farming = is_account_farming(user)
         is_harass = is_harassment(user)
         is_like = is_like_inflation(user)
+        is_clone = is_profile_cloning(user)
+        is_endorse = is_endorsement_inflation(user)
+        is_recommend = is_recommendation_fraud(user)
+        is_job = is_job_scam(user)
+        is_invite = is_invitation_spam(user)
+        is_grp = is_group_spam(user)
         first, last = name_map.get(user.user_id, (rng.choice(_FIRST_NAMES), rng.choice(_LAST_NAMES)))
         display_name = f"{first} {last}"
 
@@ -1285,7 +1379,7 @@ def _generate_profiles(
         elif is_farming:
             headline = rng.choice(_FARMING_HEADLINES)
             summary = rng.choice(_FARMING_SUMMARIES)
-        elif is_harass or is_like:
+        elif is_harass or is_like or is_clone or is_endorse or is_recommend or is_job or is_invite or is_grp:
             headline = rng.choice(_HEADLINES)
             summary = rng.choice(_SUMMARIES)
         else:
@@ -1348,6 +1442,34 @@ def _generate_profiles(
             has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "harassment_has_photo_pct", default=0.3)
             has_profile_photo = rng.random() < has_photo_pct
             location_text = ""
+        elif is_clone:
+            has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "profile_cloning_has_photo_pct", default=0.9)
+            has_profile_photo = rng.random() < has_photo_pct
+            location_text = rng.choice(_LOCATIONS) if rng.random() < 0.6 else ""
+            endorsements_count = 0
+            profile_views_received = rng.randint(0, 20)
+        elif is_endorse:
+            endorsements_max = get_cfg(cfg, "fishy_accounts", "profiles", "endorsement_inflation_endorsements_max", default=50)
+            has_profile_photo = rng.random() < 0.5
+            location_text = rng.choice(_LOCATIONS) if rng.random() < 0.5 else ""
+            endorsements_count = rng.randint(0, endorsements_max)
+            profile_views_received = rng.randint(0, 100)
+        elif is_recommend:
+            recs_max = get_cfg(cfg, "fishy_accounts", "profiles", "recommendation_fraud_recommendations_max", default=5)
+            has_profile_photo = rng.random() < 0.5
+            location_text = rng.choice(_LOCATIONS) if rng.random() < 0.5 else ""
+            endorsements_count = 0
+            profile_views_received = rng.randint(0, 50)
+        elif is_job or is_invite:
+            has_profile_photo = rng.random() < 0.4
+            location_text = rng.choice(_LOCATIONS) if rng.random() < 0.5 else ""
+            endorsements_count = rng.randint(0, 5)
+            profile_views_received = rng.randint(0, 30)
+        elif is_grp:
+            has_profile_photo = rng.random() < 0.4
+            location_text = rng.choice(_LOCATIONS) if rng.random() < 0.5 else ""
+            endorsements_count = rng.randint(0, 3)
+            profile_views_received = rng.randint(0, 20)
         elif is_like:
             has_photo_pct = get_cfg(cfg, "fishy_accounts", "profiles", "like_inflation_has_photo_pct", default=0.3)
             has_profile_photo = rng.random() < has_photo_pct
@@ -1372,6 +1494,25 @@ def _generate_profiles(
         ])
         profile_completeness = round(filled / 5.0, 2)
 
+        # groups_joined: legit users and group_spam get groups; others none
+        fishy_no_groups = (is_fake or is_pharm or is_porn or is_farming or is_harass or is_like
+                           or is_clone or is_endorse or is_recommend or is_job or is_invite)
+        if fishy_no_groups:
+            groups_joined = ()
+        elif is_grp:
+            n_min = get_cfg(cfg, "fraud", "group_spam", "groups_per_account_min", default=1)
+            n_max = get_cfg(cfg, "fraud", "group_spam", "groups_per_account_max", default=5)
+            n_groups = rng.randint(n_min, min(n_max, len(_GROUPS)))
+            groups_joined = tuple(rng.sample(_GROUPS, n_groups))
+        else:
+            n_groups = rng.randint(0, min(5, len(_GROUPS)))
+            groups_joined = tuple(rng.sample(_GROUPS, n_groups))
+
+        # cloned_from_user_id: profile_cloning impersonates a victim
+        cloned_from: str | None = None
+        if is_clone and legit_user_ids:
+            cloned_from = rng.choice(legit_user_ids)
+
         profiles.append(UserProfile(
             user_id=user.user_id,
             display_name=display_name,
@@ -1385,6 +1526,8 @@ def _generate_profiles(
             endorsements_count=endorsements_count,
             profile_views_received=profile_views_received,
             location_text=location_text,
+            groups_joined=groups_joined,
+            cloned_from_user_id=cloned_from,
         ))
 
     return profiles
@@ -1433,7 +1576,14 @@ def _generate_interactions(
     farming_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "account_farming"}
     harass_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_harassment"}
     like_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "coordinated_like_inflation"}
-    excluded_ids = fake_ids | pharmacy_ids | porn_ids | farming_ids | harass_ids | like_ids
+    clone_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "profile_cloning"}
+    endorse_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "endorsement_inflation"}
+    recommend_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "recommendation_fraud"}
+    job_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "job_posting_scam"}
+    invite_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "invitation_spam"}
+    group_ids = {u.user_id for u in users if getattr(u, "generation_pattern", "") == "group_spam"}
+    new_fishy_ids = clone_ids | endorse_ids | recommend_ids | job_ids | invite_ids | group_ids
+    excluded_ids = fake_ids | pharmacy_ids | porn_ids | farming_ids | harass_ids | like_ids | new_fishy_ids
 
     # Fake accounts: ACCOUNT_CREATION only
     for user in users:
@@ -1493,9 +1643,9 @@ def _generate_interactions(
             metadata={"user_agent": primary_ua, "ip_country": user.registration_country},
         ))
 
-    # Account farming, harassment, like inflation: ACCOUNT_CREATION from hosting cluster
+    # Account farming, harassment, like inflation, and new fishy types: ACCOUNT_CREATION from hosting
     for user in users:
-        if user.user_id not in (farming_ids | harass_ids | like_ids):
+        if user.user_id not in (farming_ids | harass_ids | like_ids | new_fishy_ids):
             continue
         primary_ua = user_primary_ua.get(user.user_id, rng.choice(_BROWSER_USER_AGENTS))
         interaction_counter += 1
@@ -1669,7 +1819,9 @@ def generate_all(
     rng = random.Random(seed)
     now = datetime.now(timezone.utc) - timedelta(minutes=15)  # buffer so events stay in past during long run
 
-    n_fake, n_pharmacy, n_porn, n_farming, n_harass, n_like = _fishy_counts(config)
+    counts = _fishy_counts(config)
+    (n_fake, n_pharmacy, n_porn, n_farming, n_harass, n_like,
+     n_clone, n_endorse, n_recommend, n_job, n_invite, n_grp) = counts
 
     print(f"Generating {num_users} users...")
     users, used_emails, name_map = _generate_users(rng, now, num_users, config)
@@ -1708,6 +1860,23 @@ def generate_all(
     like_users, like_name_map = _generate_like_inflation_users(rng, now, used_emails, base_idx=base, count=n_like)
     users = users + like_users
     name_map.update(like_name_map)
+    base += n_like
+
+    print(f"Generating {n_clone} profile cloning + {n_endorse} endorsement + {n_recommend} recommendation + "
+          f"{n_job} job scam + {n_invite} invitation spam + {n_grp} group spam users...")
+    for count, pattern, prefix in [
+        (n_clone, "profile_cloning", "clone"),
+        (n_endorse, "endorsement_inflation", "endor"),
+        (n_recommend, "recommendation_fraud", "recomm"),
+        (n_job, "job_posting_scam", "job"),
+        (n_invite, "invitation_spam", "invite"),
+        (n_grp, "group_spam", "grp"),
+    ]:
+        if count > 0:
+            fishy_users, fishy_name_map = _generate_fishy_users(rng, now, used_emails, base_idx=base, count=count, pattern=pattern, prefix=prefix)
+            users = users + fishy_users
+            name_map.update(fishy_name_map)
+            base += count
     print(f"  Total users: {len(users)}")
 
     print("Generating profiles (Zipf connections)...")

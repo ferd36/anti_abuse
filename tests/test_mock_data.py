@@ -61,8 +61,8 @@ class TestGeneratedUsers:
     def test_some_hosting_ips(self, dataset) -> None:
         users, _, _ = dataset
         hosting = [u for u in users if u.ip_type == IPType.HOSTING]
-        # ~10% legit + fishy use hosting -> expect 5-35% of total
-        assert 0.05 * TOTAL_USERS <= len(hosting) <= 0.35 * TOTAL_USERS
+        # ~10% legit + fishy use hosting -> expect 5-55% of total (more fishy = more hosting)
+        assert 0.05 * TOTAL_USERS <= len(hosting) <= 0.55 * TOTAL_USERS
 
     def test_all_join_dates_in_past(self, dataset) -> None:
         users, _, _ = dataset
@@ -75,6 +75,8 @@ class TestGeneratedUsers:
         fishy_patterns = {
             "fake_account", "pharmacy_phishing", "covert_porn",
             "account_farming", "coordinated_harassment", "coordinated_like_inflation",
+            "profile_cloning", "endorsement_inflation", "recommendation_fraud",
+            "job_posting_scam", "invitation_spam", "group_spam",
         }
         for u in users:
             if u.generation_pattern in fishy_patterns:

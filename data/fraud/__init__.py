@@ -85,6 +85,16 @@ from .connection_harvester import connection_harvester
 from .coordinated_harassment import coordinated_harassment
 from .coordinated_like_inflation import coordinated_like_inflation
 from .country_hopper import country_hopper
+from .profile_cloning import profile_cloning
+from .endorsement_inflation import endorsement_inflation
+from .recommendation_fraud import recommendation_fraud
+from .job_posting_scam import job_posting_scam
+from .invitation_spam import invitation_spam
+from .group_spam import group_spam
+from .romance_scam import romance_scam
+from .session_hijacking import session_hijacking
+from .credential_phishing import credential_phishing
+from .ad_engagement_fraud import ad_engagement_fraud
 from .credential_stuffer import credential_stuffer
 from .credential_tester import credential_tester
 from .data_thief import data_thief
@@ -159,6 +169,13 @@ def generate_malicious_events(
     account_farming_user_ids: list[str] | None = None,
     harassment_user_ids: list[str] | None = None,
     like_inflation_user_ids: list[str] | None = None,
+    profile_cloning_user_ids: list[str] | None = None,
+    endorsement_inflation_user_ids: list[str] | None = None,
+    recommendation_fraud_user_ids: list[str] | None = None,
+    job_scam_user_ids: list[str] | None = None,
+    invitation_spam_user_ids: list[str] | None = None,
+    group_spam_user_ids: list[str] | None = None,
+    user_groups_joined: dict[str, tuple[str, ...]] | None = None,
     seed: int = 99,
     fraud_pct: float = 0.5,
     config: dict | None = None,
@@ -193,7 +210,15 @@ def generate_malicious_events(
     num_selected = max(1, int(len(all_user_ids) * fraud_pct / 100))
     counts = _distribute_victims(num_selected, config)
 
-    candidates = [uid for uid in all_user_ids if uid not in {"u-000000"}]
+    # Exclude fishy accounts from victim pool (they get their own attack flows)
+    fishy_ids = set()
+    for ids in (fake_account_user_ids, account_farming_user_ids, harassment_user_ids, like_inflation_user_ids,
+                profile_cloning_user_ids, endorsement_inflation_user_ids, recommendation_fraud_user_ids,
+                job_scam_user_ids, invitation_spam_user_ids, group_spam_user_ids):
+        if ids:
+            fishy_ids.update(ids)
+
+    candidates = [uid for uid in all_user_ids if uid not in {"u-000000"} and uid not in fishy_ids]
     if user_is_active:
         candidates = [uid for uid in candidates if user_is_active.get(uid, True)]
     if user_connections_count:
@@ -465,6 +490,79 @@ def generate_malicious_events(
             all_events.extend(evts)
             num_likes = sum(1 for e in evts if e.interaction_type == InteractionType.LIKE)
             output_lines.append((f"{len(like_ids)} accounts", "Coordinated Like Inflation", f"{len(evts)} events ({num_likes} likes on {target})"))
+
+    # Profile cloning: impersonate victims
+    clone_ids = [uid for uid in (profile_cloning_user_ids or []) if uid in all_user_ids]
+    if clone_ids:
+        targets = [uid for uid in all_user_ids if uid not in set(clone_ids)]
+        if targets:
+            victims = rng.sample(targets, min(5, len(targets)))
+            base = now - timedelta(days=rng.randint(2, 10), hours=rng.randint(0, 23))
+            evts, counter = profile_cloning(clone_ids, victims, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(clone_ids)} accounts", "Profile Cloning", f"{len(evts)} events"))
+
+    # Endorsement inflation
+    endorse_ids = [uid for uid in (endorsement_inflation_user_ids or []) if uid in all_user_ids]
+    if endorse_ids:
+        targets = [uid for uid in all_user_ids if uid not in set(endorse_ids)]
+        if targets:
+            victims = rng.sample(targets, min(10, len(targets)))
+            base = now - timedelta(days=rng.randint(1, 7), hours=rng.randint(0, 23))
+            evts, counter = endorsement_inflation(endorse_ids, victims, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(endorse_ids)} accounts", "Endorsement Inflation", f"{len(evts)} events"))
+
+    # Recommendation fraud
+    recommend_ids = [uid for uid in (recommendation_fraud_user_ids or []) if uid in all_user_ids]
+    if recommend_ids:
+        targets = [uid for uid in all_user_ids if uid not in set(recommend_ids)]
+        if targets:
+            victims = rng.sample(targets, min(len(recommend_ids) * 2, len(targets)))
+            base = now - timedelta(days=rng.randint(1, 5), hours=rng.randint(0, 23))
+            evts, counter = recommendation_fraud(recommend_ids, victims, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(recommend_ids)} accounts", "Recommendation Fraud", f"{len(evts)} events"))
+
+    # Job posting scam
+    job_ids = [uid for uid in (job_scam_user_ids or []) if uid in all_user_ids]
+    if job_ids:
+        targets = [uid for uid in all_user_ids if uid not in set(job_ids)]
+        if targets:
+            base = now - timedelta(days=rng.randint(2, 7), hours=rng.randint(0, 23))
+            evts, counter = job_posting_scam(job_ids, targets, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(job_ids)} accounts", "Job Posting Scam", f"{len(evts)} events"))
+
+    # Invitation spam
+    invite_ids = [uid for uid in (invitation_spam_user_ids or []) if uid in all_user_ids]
+    if invite_ids:
+        targets = [uid for uid in all_user_ids if uid not in set(invite_ids)]
+        if targets:
+            base = now - timedelta(days=rng.randint(1, 5), hours=rng.randint(0, 23))
+            evts, counter = invitation_spam(invite_ids, targets, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(invite_ids)} accounts", "Invitation Spam", f"{len(evts)} events"))
+
+    # Group spam
+    grp_ids = [uid for uid in (group_spam_user_ids or []) if uid in all_user_ids]
+    if grp_ids:
+        groups_map = user_groups_joined or {}
+        base = now - timedelta(days=rng.randint(14, 30), hours=rng.randint(0, 23))
+        evts, counter = group_spam(grp_ids, groups_map, base, counter, rng, config=config)
+        all_events.extend(evts)
+        output_lines.append((f"{len(grp_ids)} accounts", "Group Spam", f"{len(evts)} events"))
+
+    # Ad engagement fraud (use invitation_spam or group_spam as bots to avoid CLOSE_ACCOUNT conflict)
+    ad_bot_ids = invite_ids or grp_ids
+    if ad_bot_ids:
+        available_bots = rng.sample(ad_bot_ids, min(5, len(ad_bot_ids)))
+        if available_bots:
+            base = now - timedelta(days=rng.randint(2, 10), hours=rng.randint(0, 23))
+            bot_ids = rng.sample(available_bots, min(5, len(available_bots)))
+            evts, counter = ad_engagement_fraud(available_bots, base, counter, rng, config=config)
+            all_events.extend(evts)
+            output_lines.append((f"{len(available_bots)} bots", "Ad Engagement Fraud", f"{len(evts)} events"))
 
     # Format and print aligned output
     if output_lines:

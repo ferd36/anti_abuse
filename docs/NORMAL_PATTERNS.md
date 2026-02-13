@@ -163,17 +163,19 @@ This document describes typical, legitimate user behaviour on the platform. Thes
 
 ## Summary
 
-| Pattern            | Login frequency | Volume   | Main characteristic                         |
-|--------------------|-----------------|----------|---------------------------------------------|
-| Casual Browser     | 1–2/week        | Low      | Occasional, light engagement                |
-| Active Job Seeker  | Several/week    | High     | Sustained activity, spread over time        |
-| Recruiter          | Frequent        | High     | Steady view/connect volume, work-focused    |
+| Pattern             | Login frequency | Volume   | Main characteristic                         |
+|---------------------|-----------------|----------|---------------------------------------------|
+| Casual Browser      | 1–2/week        | Low      | Occasional, light engagement                |
+| Active Job Seeker   | Several/week    | High     | Sustained activity, spread over time        |
+| Recruiter           | Frequent        | High     | Steady view/connect volume, work-focused    |
 | Regular Networker   | 2–3/week        | Moderate | Consistent mix of actions                   |
-| Returning User     | After long gap  | Low–Mod  | Gradual return, no burst                    |
+| Returning User      | After long gap  | Low–Mod  | Gradual return, no burst                    |
+| Career Update       | 1–2 total       | Very low | Profile updates only, no browsing            |
+| Dormant Account    | 0–1 total       | None     | Signup only, no activity                    |
 | New User Onboarding| High at first   | High     | Concentrated in first few days              |
-| Weekly Check-in    | ~1/week         | Very low | Minimal, regular sessions                   |
-| Content Consumer   | Variable        | Low out  | Many views, few messages or connections     |
-| Exec Delegation    | 2–4/week (PH)   | Moderate | Secretary abroad; country mismatch, false positive |
+| Weekly Check-in     | ~1/week         | Very low | Minimal, regular sessions                   |
+| Content Consumer    | Variable        | Low out  | Many views, few messages or connections     |
+| Exec Delegation     | 2–4/week (PH)   | Moderate | Secretary abroad; country mismatch, false positive |
 
 ---
 

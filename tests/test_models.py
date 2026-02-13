@@ -502,6 +502,30 @@ class TestUserProfile:
                 location_text="x" * 201,
             )
 
+    def test_valid_groups_joined(self, now: datetime) -> None:
+        p = UserProfile(
+            user_id="u-0001",
+            display_name="Alice",
+            headline="",
+            summary="",
+            connections_count=0,
+            profile_created_at=now,
+            groups_joined=("grp-tech-eng", "grp-software-dev"),
+        )
+        assert p.groups_joined == ("grp-tech-eng", "grp-software-dev")
+
+    def test_groups_joined_empty_string_fails(self, now: datetime) -> None:
+        with pytest.raises(AssertionError, match="groups_joined entries"):
+            UserProfile(
+                user_id="u-0001",
+                display_name="Alice",
+                headline="",
+                summary="",
+                connections_count=0,
+                profile_created_at=now,
+                groups_joined=("grp-ok", ""),
+            )
+
 
 # ===================================================================
 # UserInteraction tests
