@@ -1675,12 +1675,15 @@ def _generate_interactions(
             _last_pct[0] = int(pct // 5) * 5
             print(f"\r  Users: {processed:,}/{total:,} ({pct:.1f}%) | Events: {events_count:,}", end="", flush=True)
 
-    legit_events, interaction_counter = generate_legitimate_events(
+    legit_events, interaction_counter, user_to_pattern = generate_legitimate_events(
         users, all_user_ids, window_start, now,
         interaction_counter, rng, user_primary_ua, excluded_ids,
         config=cfg,
         progress_callback=_progress,
     )
+    for u in users:
+        if u.user_id in user_to_pattern:
+            object.__setattr__(u, "normal_pattern", user_to_pattern[u.user_id])
     if len(users) > len(excluded_ids):
         print()
     interactions.extend(legit_events)

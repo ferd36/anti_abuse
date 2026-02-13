@@ -936,16 +936,40 @@ async function loadProfile(userId) {
     ? '<span class="badge badge-hosting">Hosting</span>'
     : '<span class="badge badge-residential">Residential</span>';
 
+  const regCountryDisplay = u.registration_country !== u.country
+    ? `${u.registration_country} → ${u.country} (moved)`
+    : u.registration_country;
+  const lastPasswordChange = u.last_password_change_at
+    ? new Date(u.last_password_change_at).toLocaleDateString()
+    : '-';
+  const generatorDisplay = u.generation_pattern && u.generation_pattern !== 'clean'
+    ? (u.generation_pattern || '-')
+    : (u.normal_pattern || '-');
+  const verificationBadges = [
+    u.email_verified ? 'Email verified' : null,
+    u.two_factor_enabled ? '2FA' : null,
+    u.phone_verified ? 'Phone verified' : null,
+  ].filter(Boolean).join(' · ') || 'None';
+
   html += `<div class="card" style="margin-top:12px">
     <h2>Account Details</h2>
     <ul class="detail-list">
       <li><span class="label">User ID</span><span class="value"><code>${u.user_id}</code></span></li>
+      <li><span class="label">Generator</span><span class="value">${esc(generatorDisplay)}</span></li>
       <li><span class="label">Email</span><span class="value">${esc(u.email)}</span></li>
       <li><span class="label">Status</span><span class="value">${statusBadge}</span></li>
       <li><span class="label">Country</span><span class="value">${u.country}</span></li>
-      <li><span class="label">Language</span><span class="value">${u.language}</span></li>
+      <li><span class="label">Registration IP</span><span class="value"><code>${u.registration_ip || '-'}</code></span></li>
+      <li><span class="label">Registration Country</span><span class="value">${regCountryDisplay}</span></li>
+      <li><span class="label">Address</span><span class="value">${esc(u.address || '-')}</span></li>
       <li><span class="label">IP Address</span><span class="value"><code>${u.ip_address}</code></span></li>
       <li><span class="label">IP Type</span><span class="value">${ipBadge}</span></li>
+      <li><span class="label">Language</span><span class="value">${u.language}</span></li>
+      <li><span class="label">Account Tier</span><span class="value">${u.account_tier || 'free'}</span></li>
+      <li><span class="label">User Type</span><span class="value">${u.user_type || 'regular'}</span></li>
+      <li><span class="label">Verification</span><span class="value">${verificationBadges}</span></li>
+      <li><span class="label">Last Password Change</span><span class="value">${lastPasswordChange}</span></li>
+      <li><span class="label">Failed Login Streak</span><span class="value">${u.failed_login_streak ?? 0}</span></li>
       <li><span class="label">Joined</span><span class="value">${joined}</span></li>
       <li><span class="label">Profile Created</span><span class="value">${profileCreated}</span></li>
       <li><span class="label">Last Updated</span><span class="value">${lastUpdated}</span></li>

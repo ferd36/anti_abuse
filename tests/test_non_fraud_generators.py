@@ -474,7 +474,7 @@ class TestGenerateLegitimateEvents:
         all_user_ids = [u.user_id for u in users] + [f"u-{i:04d}" for i in range(3, 50)]
         user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
 
-        events, counter = generate_legitimate_events(
+        events, counter, _ = generate_legitimate_events(
             users, all_user_ids, window_start, now, 0, rng, user_primary_ua, set(),
         )
         assert len(events) > 0
@@ -494,7 +494,7 @@ class TestGenerateLegitimateEvents:
         user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
         fake_ids = {"u-fake-001"}
 
-        events, _ = generate_legitimate_events(
+        events, _, _ = generate_legitimate_events(
             users, all_user_ids, window_start, now, 0, rng, user_primary_ua, fake_ids,
         )
         user_ids_in_events = {e.user_id for e in events}
@@ -521,7 +521,7 @@ class TestGenerateLegitimateEvents:
         all_user_ids = [u.user_id for u in users] + [f"u-{i:04d}" for i in range(100, 150)]
         user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
 
-        events, _ = generate_legitimate_events(
+        events, _, _ = generate_legitimate_events(
             users, all_user_ids, window_start, now, 0, rng, user_primary_ua, set(),
             config=config,
         )
@@ -540,7 +540,7 @@ class TestGenerateLegitimateEvents:
         all_user_ids = [u.user_id for u in users] + [f"u-{i:04d}" for i in range(10)]
         user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
 
-        events, _ = generate_legitimate_events(
+        events, _, _ = generate_legitimate_events(
             users, all_user_ids, window_start, now, 0, rng, user_primary_ua, set(),
         )
         close_events = [e for e in events if e.interaction_type == InteractionType.CLOSE_ACCOUNT]
@@ -568,7 +568,7 @@ class TestTemporalInvariants:
         all_user_ids = [u.user_id for u in users] + [f"u-{i:04d}" for i in range(100, 200)]
         user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
 
-        events, _ = generate_legitimate_events(
+        events, _, _ = generate_legitimate_events(
             users, all_user_ids, window_start, now, 0, rng, user_primary_ua, set(),
         )
         assert len(events) > 0
@@ -589,7 +589,7 @@ class TestTemporalInvariants:
         for seed in (0, 1, 42, 99, 123):
             rng = random.Random(seed)
             user_primary_ua = {u.user_id: "Mozilla/5.0" for u in users}
-            events, _ = generate_legitimate_events(
+            events, _, _ = generate_legitimate_events(
                 users, all_user_ids, window_start, now, 0, rng, user_primary_ua, set(),
             )
             if len(events) > 0:

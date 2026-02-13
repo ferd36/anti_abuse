@@ -49,7 +49,7 @@ def generate_legitimate_events(
     *,
     config: dict | None = None,
     progress_callback: Callable[[int, int, int], None] | None = None,
-) -> tuple[list[UserInteraction], int]:
+) -> tuple[list[UserInteraction], int, dict[str, str]]:
     """
     Generate legitimate interaction events for non-fake users.
 
@@ -61,10 +61,12 @@ def generate_legitimate_events(
     - CLOSE_ACCOUNT only for inactive users, at the end
 
     Returns:
-        (events, counter) - events sorted by timestamp.
+        (events, counter, user_to_pattern) - events sorted by timestamp,
+        counter, and mapping of user_id -> pattern name for normal users.
     """
     cfg = config or {}
     events: list[UserInteraction] = []
+    user_to_pattern: dict[str, str] = {}
     legit_users = [u for u in users if u.user_id not in fake_ids]
     total = len(legit_users)
     processed = 0
@@ -99,6 +101,8 @@ def generate_legitimate_events(
             pattern = "dormant_account"
         else:
             pattern = rng.choices(weights_keys, weights=weights_vals, k=1)[0]
+
+        user_to_pattern[user.user_id] = pattern
 
         user_window_start = max(window_start, user.join_date)
         if user_window_start >= now:
@@ -159,7 +163,7 @@ def generate_legitimate_events(
             progress_callback(processed, total, len(events))
 
     events.sort(key=lambda e: e.timestamp)
-    return events, counter
+    return events, counter, user_to_pattern
 
 
 __all__ = ["generate_legitimate_events"]

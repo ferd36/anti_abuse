@@ -75,6 +75,7 @@ class User:
     language: str
     is_active: bool = True
     generation_pattern: str = "clean"  # source of truth: "clean" or attack pattern name
+    normal_pattern: str = ""  # For normal users: casual_browser, recruiter, etc.
     email_verified: bool = True
     two_factor_enabled: bool = False
     last_password_change_at: datetime | None = None

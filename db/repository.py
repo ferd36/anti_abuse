@@ -169,6 +169,13 @@ class Repository:
         except sqlite3.OperationalError as e:
             if "duplicate column name" not in str(e).lower():
                 raise
+        # Migration: add normal_pattern to users if missing
+        try:
+            self._conn.execute("ALTER TABLE users ADD COLUMN normal_pattern TEXT NOT NULL DEFAULT ''")
+            self._conn.commit()
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
 
     # ------------------------------------------------------------------
     # Users
@@ -180,10 +187,10 @@ class Repository:
             """INSERT INTO users
                (user_id, email, join_date, country, ip_address, registration_ip,
                 registration_country, address, ip_type, language,
-                is_active, generation_pattern, email_verified, two_factor_enabled,
+                is_active, generation_pattern, normal_pattern, email_verified, two_factor_enabled,
                 last_password_change_at, account_tier, failed_login_streak, phone_verified,
                 user_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             self._user_to_row(user),
         )
         self._conn.commit()
@@ -196,10 +203,10 @@ class Repository:
             """INSERT INTO users
                (user_id, email, join_date, country, ip_address, registration_ip,
                 registration_country, address, ip_type, language,
-                is_active, generation_pattern, email_verified, two_factor_enabled,
+                is_active, generation_pattern, normal_pattern, email_verified, two_factor_enabled,
                 last_password_change_at, account_tier, failed_login_streak, phone_verified,
                 user_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             rows,
         )
         self._conn.commit()
@@ -210,7 +217,8 @@ class Repository:
             u.user_id, u.email, _dt_to_iso(u.join_date), u.country,
             u.ip_address, u.registration_ip, u.registration_country, u.address,
             u.ip_type.value, u.language, 1 if u.is_active else 0,
-            u.generation_pattern, 1 if u.email_verified else 0,
+            u.generation_pattern, getattr(u, "normal_pattern", "") or "",
+            1 if u.email_verified else 0,
             1 if u.two_factor_enabled else 0,
             _dt_to_iso(u.last_password_change_at) if u.last_password_change_at else None,
             u.account_tier, u.failed_login_streak, 1 if u.phone_verified else 0,
@@ -297,6 +305,7 @@ class Repository:
             language=row["language"],
             is_active=bool(row["is_active"]),
             generation_pattern=row["generation_pattern"] if "generation_pattern" in keys else "clean",
+            normal_pattern=row["normal_pattern"] if "normal_pattern" in keys else "",
             email_verified=bool(row["email_verified"]) if "email_verified" in keys else True,
             two_factor_enabled=bool(row["two_factor_enabled"]) if "two_factor_enabled" in keys else False,
             last_password_change_at=(
